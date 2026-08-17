@@ -156,9 +156,9 @@ a{color:var(--matcha);}
 .item{display:flex;align-items:flex-start;gap:9px;padding:5px 0;}
 .item .bul{flex:0 0 5px;height:5px;border-radius:50%;background:var(--line);margin-top:9px;}
 .item:focus-within .bul{background:var(--ume);}
-.item .del{flex:0 0 auto;background:transparent;border:none;color:#4E5A78;
+.item .del,.rc-top .del{flex:0 0 auto;background:transparent;border:none;color:#4E5A78;
   font-size:14px;line-height:1;cursor:pointer;padding:5px 2px 5px 6px;min-height:30px;}
-.item .del:active,.item .del:hover{color:var(--ume);}
+.item .del:active,.item .del:hover,.rc-top .del:active,.rc-top .del:hover{color:var(--ume);}
 .additem{margin-top:8px;background:transparent;border:1px dashed var(--line);
   border-radius:99px;color:var(--mute);font-size:12.5px;font-weight:700;
   padding:8px 14px;min-height:38px;cursor:pointer;width:100%;}
@@ -314,7 +314,7 @@ body.viewer .day .del{display:none!important;}
 <div class="foot">
   Tap any field to edit · saves automatically<br>
   Photos sort by their date and location data
-  <div><button class="lockbtn" id="lockBtn" hidden>🔒 Lock</button></div>
+  <div><button class="lockbtn" id="lockBtn" hidden>Log out</button></div>
 </div>
 
 <button class="fab" id="fab">📥 <span id="fabN">0</span> photos need a leg</button>
@@ -786,7 +786,7 @@ function panels(){
       <div class="yen"><span>¥</span><input inputmode="decimal" class="rc-amt" data-ra="${i}"
         value="${r.y||''}" placeholder="0"></div>
       <div class="who" data-rwho="${i}">
-       <button data-p="B" aria-selected="${r.p!=='N'}">Me</button>
+       <button data-p="B" aria-selected="${r.p!=='N'}">Brian</button>
        <button data-p="N" aria-selected="${r.p==='N'}">Nana</button>
       </div>
      </div>`;
@@ -808,7 +808,7 @@ function panels(){
    p.querySelector('[data-tally]').innerHTML=`
     <div class="t-main"><span class="t-yen">¥${Math.round(total).toLocaleString()}</span>
      <span class="t-cad">${cad(total)} CAD</span></div>
-    <div class="t-split"><span>Me ¥${Math.round(mine).toLocaleString()}</span>
+    <div class="t-split"><span>Brian ¥${Math.round(mine).toLocaleString()}</span>
      <span>Nana ¥${Math.round(hers).toLocaleString()}</span></div>
     <div class="t-settle">${settle}</div>
     <label class="t-rate">¥1 = <input inputmode="decimal" data-rate value="${S.rate}"> CAD</label>`;

@@ -44,5 +44,5 @@ window.TRIP_CONFIG = {
      It keeps casual viewers out; it does not stop a determined one. Keep the
      repo private and don't share the edit password with viewers. */
   EDIT_PASSWORD: "NANABRIAN",
-  VIEW_PASSWORD: "JAPAN"
+  VIEW_PASSWORD: "0000"
 };
