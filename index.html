@@ -154,6 +154,12 @@ a{color:var(--matcha);}
 
 .items{display:flex;flex-direction:column;}
 .item{display:flex;align-items:flex-start;gap:9px;padding:5px 0;}
+.item .bul{cursor:grab;}
+.item.dragging{background:var(--card-2);border-radius:9px;padding:5px 8px;margin:0 -8px;
+  box-shadow:0 10px 22px -10px rgba(0,0,0,.75);transform:scale(1.02);
+  position:relative;z-index:3;cursor:grabbing;}
+.item.dragging *{cursor:grabbing;-webkit-user-select:none;user-select:none;}
+.item.dragging .plan{pointer-events:none;}
 .item .bul{flex:0 0 5px;height:5px;border-radius:50%;background:var(--line);margin-top:11px;}
 .item:focus-within .bul{background:var(--ume);}
 .item .del,.rc-top .del{flex:0 0 auto;background:transparent;border:none;color:#4E5A78;
@@ -761,6 +767,75 @@ function panels(){
     save('it2:'+L.id,it);drawDays();
    }
   });
+
+  // Tap-and-hold (or click-and-hold) an itinerary item to pick it up, then
+  // drag to reorder it within its day. Editors only.
+  if(!viewer){
+   let dTimer=null,startX=0,startY=0,dragEl=null,itemsEl=null,active=false,curPid=null;
+   const HOLD=320,CANCEL=10;
+   const tmGuard=e=>{ if(active) e.preventDefault(); };
+   const preMove=e=>{ if(e.pointerId===curPid && Math.hypot(e.clientX-startX,e.clientY-startY)>CANCEL) disarm(); };
+   const preUp=e=>{ if(e.pointerId===curPid) disarm(); };
+   function disarm(){
+    clearTimeout(dTimer);dTimer=null;
+    window.removeEventListener('pointermove',preMove);
+    window.removeEventListener('pointerup',preUp);
+    window.removeEventListener('pointercancel',preUp);
+    if(!active) curPid=null;
+   }
+   function begin(){
+    window.removeEventListener('pointermove',preMove);
+    window.removeEventListener('pointerup',preUp);
+    window.removeEventListener('pointercancel',preUp);
+    active=true;
+    dragEl.classList.add('dragging');
+    if(document.activeElement&&dragEl.contains(document.activeElement))document.activeElement.blur();
+    window.addEventListener('pointermove',onMove);
+    window.addEventListener('pointerup',onUp);
+    window.addEventListener('pointercancel',onUp);
+    window.addEventListener('touchmove',tmGuard,{passive:false});
+    if(navigator.vibrate){try{navigator.vibrate(10);}catch(_){}}
+   }
+   function onMove(e){
+    if(e.pointerId!==curPid)return;
+    e.preventDefault();
+    const y=e.clientY;
+    const sibs=[...itemsEl.querySelectorAll('.item:not(.dragging)')];
+    let before=null;
+    for(const s of sibs){const r=s.getBoundingClientRect();if(y<r.top+r.height/2){before=s;break;}}
+    if(before){ if(before.previousElementSibling!==dragEl) itemsEl.insertBefore(dragEl,before); }
+    else if(itemsEl.lastElementChild!==dragEl){ itemsEl.appendChild(dragEl); }
+   }
+   function onUp(e){
+    if(e.pointerId!==curPid)return;
+    const first=itemsEl.querySelector('.plan');
+    if(first){
+     const dayIndex=+first.dataset.i;
+     it.days[dayIndex]=[...itemsEl.querySelectorAll('.plan')].map(t=>t.value);
+     save('it2:'+L.id,it);
+    }
+    end();drawDays();
+   }
+   function end(){
+    window.removeEventListener('pointermove',onMove);
+    window.removeEventListener('pointerup',onUp);
+    window.removeEventListener('pointercancel',onUp);
+    window.removeEventListener('touchmove',tmGuard,{passive:false});
+    if(dragEl)dragEl.classList.remove('dragging');
+    dragEl=null;itemsEl=null;active=false;curPid=null;
+   }
+   dw.addEventListener('pointerdown',e=>{
+    if(active||e.button>0||!e.isPrimary)return;
+    const item=e.target.closest('.item');
+    if(!item||!dw.contains(item)||e.target.closest('.del'))return;
+    dragEl=item;itemsEl=item.parentElement;curPid=e.pointerId;
+    startX=e.clientX;startY=e.clientY;
+    window.addEventListener('pointermove',preMove);
+    window.addEventListener('pointerup',preUp);
+    window.addEventListener('pointercancel',preUp);
+    dTimer=setTimeout(begin,HOLD);
+   });
+  }
 
   p.querySelector('[data-pick]').onclick=()=>{target=null;document.getElementById('fi').click();};
   p.querySelector('[data-pickhere]').onclick=()=>{target=L.id;document.getElementById('fi').click();};
