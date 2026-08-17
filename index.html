@@ -8,12 +8,21 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Japan">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <title>Japan · Dec 2026 – Jan 2027</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap"></noscript>
 <script src="config.js"></script>
+<script>
+if(window.TRIP_CONFIG?.SUPABASE_URL){
+  const o=document.createElement('link');o.rel='preconnect';o.href=new URL(window.TRIP_CONFIG.SUPABASE_URL).origin;
+  document.head.appendChild(o);
+}
+</script>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <style>
 :root{
   --night-2:#0D1220; --card:#1C2438; --card-2:#222C43;
@@ -301,10 +310,14 @@ const CFG = window.TRIP_CONFIG || {};
 const BUCKET = CFG.BUCKET || 'trip-media';
 let sb = null, online = false;
 
+const sbImport = (CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY)
+ ? import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm')
+ : null;
+
 async function initDB(){
- if(!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return false;
+ if(!sbImport) return false;
  try{
-  const {createClient} = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  const {createClient} = await sbImport;
   sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {auth:{persistSession:false}});
   online = true;
   return true;
@@ -469,21 +482,45 @@ const F=[
 
 let S={it:{},ph:{},rc:{},un:[],rate:0.0094},act=LEGS[0].id,sub='plan',target=null;
 
-async function load(){
+function resetLocal(){
  for(const L of LEGS){
   S.it[L.id]={...L.d,days:L.days.map(d=>[...d[1]])};
-  try{const r=await store.get('it2:'+L.id);if(r&&r.value){
-   const sv=JSON.parse(r.value);
-   if(Array.isArray(sv.days))sv.days=sv.days.map(d=>typeof d==='string'?(d.trim()?[d]:[]):(Array.isArray(d)?d:[]));
-   S.it[L.id]={...S.it[L.id],...sv};
-  }}catch(e){}
   S.ph[L.id]=[];
-  try{const r=await store.get('ph2:'+L.id);if(r&&r.value)S.ph[L.id]=JSON.parse(r.value);}catch(e){}
   S.rc[L.id]=[];
-  try{const r=await store.get('rc2:'+L.id);if(r&&r.value)S.rc[L.id]=JSON.parse(r.value);}catch(e){}
  }
- try{const r=await store.get('rate2');if(r&&r.value){const v=parseFloat(JSON.parse(r.value));if(v>0)S.rate=v;}}catch(e){}
- try{const r=await store.get('un2');if(r&&r.value)S.un=JSON.parse(r.value);}catch(e){}
+ S.un=[];
+}
+
+function docKeys(){
+ const keys=[];
+ for(const L of LEGS) keys.push('it2:'+L.id,'ph2:'+L.id,'rc2:'+L.id);
+ keys.push('rate2','un2');
+ return keys;
+}
+
+async function load(){
+ resetLocal();
+ if(!sb) return;
+ try{
+  const {data,error}=await sb.from('docs').select('key,value').in('key',docKeys());
+  if(error) throw error;
+  const byKey=new Map((data||[]).map(r=>[r.key,r.value]));
+  for(const L of LEGS){
+   const sv=byKey.get('it2:'+L.id);
+   if(sv){
+    if(Array.isArray(sv.days))sv.days=sv.days.map(d=>typeof d==='string'?(d.trim()?[d]:[]):(Array.isArray(d)?d:[]));
+    S.it[L.id]={...S.it[L.id],...sv};
+   }
+   const ph=byKey.get('ph2:'+L.id);
+   if(Array.isArray(ph)) S.ph[L.id]=ph;
+   const rc=byKey.get('rc2:'+L.id);
+   if(Array.isArray(rc)) S.rc[L.id]=rc;
+  }
+  const rate=byKey.get('rate2');
+  if(rate!=null){const v=typeof rate==='number'?rate:parseFloat(rate);if(v>0)S.rate=v;}
+  const un=byKey.get('un2');
+  if(Array.isArray(un)) S.un=un;
+ }catch(e){ console.error('load failed', e); throw e; }
 }
 const save=(k,v)=>store.set(k,JSON.stringify(v)).catch(e=>console.error('save failed',k,e));
 
@@ -821,7 +858,18 @@ async function upload(file,thumbDataUrl,isVideo){
  }catch(e){ console.error('upload failed',e); status('error'); return null; }
 }
 
-function imgThumb(file){
+let exifReady;
+function loadExif(){
+ if(!exifReady) exifReady=new Promise((res,rej)=>{
+  const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js';
+  s.onload=()=>res(window.EXIF);s.onerror=rej;document.head.appendChild(s);
+ });
+ return exifReady;
+}
+
+async function imgThumb(file){
+ const EXIF=await loadExif().catch(()=>null);
  return new Promise(res=>{
   const fr=new FileReader();
   fr.onload=e=>{
@@ -832,6 +880,7 @@ function imgThumb(file){
     const c=document.createElement('canvas');c.width=w;c.height=h;
     c.getContext('2d').drawImage(img,0,0,w,h);
     const url=c.toDataURL('image/jpeg',.6);
+    if(!EXIF){res({url,date:null,gps:null});return;}
     try{
      EXIF.getData(img,function(){
       const dt=EXIF.getTag(this,'DateTimeOriginal')||EXIF.getTag(this,'DateTime');
@@ -909,8 +958,12 @@ document.getElementById('sheetBg').onclick=e=>{if(e.target.id==='sheetBg')e.curr
 document.getElementById('lbC').onclick=()=>document.getElementById('lb').classList.remove('on');
 document.getElementById('lb').onclick=e=>{if(e.target.id==='lb')e.currentTarget.classList.remove('on');};
 
+const hasConfig=CFG.SUPABASE_URL&&CFG.SUPABASE_ANON_KEY;
+if(hasConfig){resetLocal();chips();countdown();panels();fab();}
+const dbReady=initDB();
+
 (async function(){
- const ok=await initDB();
+ const ok=await dbReady;
  if(!ok){
   status('offline');
   document.getElementById('panels').innerHTML=
@@ -919,7 +972,9 @@ document.getElementById('lb').onclick=e=>{if(e.target.id==='lb')e.currentTarget.
     See README.md for the setup steps.</div>`;
   return;
  }
- await load();chips();countdown();panels();fab();watch();status('ok');
+ try{
+  await load();chips();panels();fab();watch();status('ok');
+ }catch(e){ status('error'); }
 })();
 })();
 </script>
