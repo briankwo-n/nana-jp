@@ -79,6 +79,33 @@ All six legs are defined in the `LEGS` array near the top of the `<script>` bloc
 live there. Edits made in the running app override these defaults and are stored per
 device; the array is only the starting state for a fresh device.
 
+## Access and passwords
+
+Set two passwords in `config.js` to put a sign-in screen in front of the app:
+
+- `EDIT_PASSWORD` — you and Nana. Full access: edit the itinerary, upload and
+  move photos, and see hotel details and receipts.
+- `VIEW_PASSWORD` — family. View only: the day-by-day plan, the leg dates, and
+  the photos. Hotel names, confirmation numbers, check-out times, receipts, and
+  hotel links are hidden and never rendered into the page.
+
+Leave both empty (`""`) to disable the screen — the app then opens straight into
+full edit mode, the way it did before. The chosen mode is remembered on the
+device; the **Lock** button at the bottom of the page returns to the sign-in
+screen so you can switch or hand the phone to someone else.
+
+This is a soft, convenience gate, not real security. Like the Supabase anon key,
+these passwords ship to the browser, so anyone who opens the page source could
+read them. It keeps casual viewers away from the hotel and receipt details; it
+does not stop a determined, technical person. Keep the repo private and don't
+share the edit password with viewers.
+
+## Moving a photo to another leg
+
+If a photo lands in the wrong leg (or you assigned it by hand and changed your
+mind), tap it to open it full screen and use the **Move to** menu in the top-left
+to send it to a different leg.
+
 ## Notes
 
 - There is no build step, so Vercel environment variables do **not** work here.

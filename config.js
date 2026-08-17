@@ -23,5 +23,26 @@ window.TRIP_CONFIG = {
   UPLOAD_ORIGINALS: false,
 
   // Skip originals larger than this. Free tier hard-caps at 50 MB per file.
-  MAX_FILE_BYTES: 50 * 1024 * 1024
+  MAX_FILE_BYTES: 50 * 1024 * 1024,
+
+  /* Access passwords for the sign-in screen.
+
+     EDIT_PASSWORD  you and Nana. Full access: edit the itinerary, upload and
+                    move photos, see hotel details and receipts.
+     VIEW_PASSWORD  family. View only: the day-by-day plan, the leg dates, and
+                    the photos. Hotel names, confirmation numbers, check-out
+                    times, receipts, and hotel links are hidden.
+
+     Passwords are case-insensitive and ignore surrounding spaces, so "Pineapple"
+     and "pineapple " both work. Pick two that differ by more than just case.
+
+     Leave both empty ("") to disable the sign-in screen entirely — the app
+     then opens straight into full edit mode, the way it did before.
+
+     This is a soft gate, not real security. Like the anon key above, these
+     ship to the browser, so anyone who opens the page source could read them.
+     It keeps casual viewers out; it does not stop a determined one. Keep the
+     repo private and don't share the edit password with viewers. */
+  EDIT_PASSWORD: "NANABRIAN",
+  VIEW_PASSWORD: "JAPAN"
 };
