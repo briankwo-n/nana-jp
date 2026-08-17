@@ -81,24 +81,39 @@ device; the array is only the starting state for a fresh device.
 
 ## Access and passwords
 
-Set two passwords in `config.js` to put a sign-in screen in front of the app:
+Set three passwords in `config.js` to put a sign-in screen in front of the app:
 
-- `EDIT_PASSWORD` — you and Nana. Full access: edit the itinerary, upload and
-  move photos, and see hotel details and receipts.
+- `BRIAN_PASSWORD` — Brian's individual login. Full access, and anything he adds
+  (photos, notes, receipts) is tagged **B**.
+- `NANA_PASSWORD` — Nana's individual login. Full access, and anything she adds is
+  tagged **N**.
 - `VIEW_PASSWORD` — family. View only: the day-by-day plan, the leg dates, and
   the photos. Hotel names, confirmation numbers, check-out times, receipts, and
-  hotel links are hidden and never rendered into the page.
+  notes are hidden and never rendered into the page.
 
-Leave both empty (`""`) to disable the screen — the app then opens straight into
-full edit mode, the way it did before. The chosen mode is remembered on the
-device; the **Lock** button at the bottom of the page returns to the sign-in
-screen so you can switch or hand the phone to someone else.
+Because each person signs in with their own password, the app knows who's adding
+things: new notes, receipts, and uploaded photos default to that person's tag
+(you can still flip a note or receipt to the other person with its toggle). The
+footer shows who you're signed in as.
+
+Leave all three empty (`""`) to disable the screen — the app then opens straight
+into full edit mode (as Brian), the way it did before. The login is remembered on
+the device; the **Log out** button at the bottom returns to the sign-in screen so
+you can switch or hand the phone to someone else.
 
 This is a soft, convenience gate, not real security. Like the Supabase anon key,
 these passwords ship to the browser, so anyone who opens the page source could
 read them. It keeps casual viewers away from the hotel and receipt details; it
 does not stop a determined, technical person. Keep the repo private and don't
-share the edit password with viewers.
+share the edit passwords with viewers.
+
+## Notes and comments
+
+Each leg has a **Notes** tab for favourites, places to revisit, and comments
+between you and Nana. A new note is tagged with whoever's signed in (Brian or
+Nana), and you can flip it with the toggle, so it works as a back-and-forth.
+Like receipts, the Notes tab is **editor-only** — it never appears for viewers
+and its text is never rendered into a viewer's page.
 
 ## Moving a photo to another leg
 

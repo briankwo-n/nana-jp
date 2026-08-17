@@ -27,22 +27,25 @@ window.TRIP_CONFIG = {
 
   /* Access passwords for the sign-in screen.
 
-     EDIT_PASSWORD  you and Nana. Full access: edit the itinerary, upload and
-                    move photos, see hotel details and receipts.
-     VIEW_PASSWORD  family. View only: the day-by-day plan, the leg dates, and
-                    the photos. Hotel names, confirmation numbers, check-out
-                    times, receipts, and hotel links are hidden.
+     BRIAN_PASSWORD  Brian's login. Full access, and everything he adds — photos,
+                     notes, receipts — is tagged "B".
+     NANA_PASSWORD   Nana's login. Full access, and everything she adds is tagged
+                     "N".
+     VIEW_PASSWORD   family. View only: the day-by-day plan, the leg dates, and
+                     the photos. Hotel names, confirmation numbers, check-out
+                     times, receipts, and notes are hidden.
 
      Passwords are case-insensitive and ignore surrounding spaces, so "Pineapple"
-     and "pineapple " both work. Pick two that differ by more than just case.
+     and "pineapple " both work. Make them all different from each other.
 
-     Leave both empty ("") to disable the sign-in screen entirely — the app
-     then opens straight into full edit mode, the way it did before.
+     Leave all three empty ("") to disable the sign-in screen entirely — the app
+     then opens straight into full edit mode (as Brian), the way it did before.
 
      This is a soft gate, not real security. Like the anon key above, these
      ship to the browser, so anyone who opens the page source could read them.
      It keeps casual viewers out; it does not stop a determined one. Keep the
-     repo private and don't share the edit password with viewers. */
-  EDIT_PASSWORD: "NANABRIAN",
+     repo private and don't share the edit passwords with viewers. */
+  BRIAN_PASSWORD: "BRIAN",
+  NANA_PASSWORD: "NANA",
   VIEW_PASSWORD: "0000"
 };
