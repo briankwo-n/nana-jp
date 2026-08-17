@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Japan">
+<link rel="manifest" href="manifest.json">
+<title>Japan · Dec 2026 – Jan 2027</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.js"></script>
+<script src="config.js"></script>
+<style>
+:root{
+  --night-2:#0D1220; --card:#1C2438; --card-2:#222C43;
+  --frost:#E9EDF5; --mute:#8C9AB5;
+  --ume:#E8608F; --ume-dim:rgba(232,96,143,.16);
+  --matcha:#79C4AE; --line:#2B354F;
+  --r:16px; --pad:16px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;scrollbar-width:none;-ms-overflow-style:none;}
+html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none;}
+.sheet{scrollbar-width:none;-ms-overflow-style:none;}
+.sheet::-webkit-scrollbar{width:0;display:none;}
+body{
+  background:var(--night-2);color:var(--frost);
+  font-family:'Zen Kaku Gothic New','Hiragino Sans',system-ui,sans-serif;
+  font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(90px + env(safe-area-inset-bottom));
+}
+button,input,textarea{font-family:inherit;}
+a{color:var(--matcha);}
+
+.topbar{
+  position:sticky;top:0;z-index:30;
+  background:linear-gradient(180deg,var(--night-2) 72%,rgba(13,18,32,.94));
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
+  padding:calc(12px + env(safe-area-inset-top)) var(--pad) 0;
+}
+.brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.brand{font-family:'Shippori Mincho',serif;font-weight:800;font-size:19px;margin:0;}
+.brand .jp{color:var(--ume);font-size:15px;margin-left:6px;font-weight:600;}
+.countdown{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mute);text-align:right;white-space:nowrap;}
+.countdown b{color:var(--matcha);}
+.sync{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.06em;
+  padding:2px 8px;border-radius:99px;margin-left:8px;vertical-align:middle;
+  border:1px solid transparent;transition:opacity .3s ease;}
+.sync.idle{opacity:0;}
+.sync.ok{background:rgba(121,196,174,.15);color:var(--matcha);border-color:var(--matcha);}
+.sync.saving{background:rgba(232,96,143,.15);color:var(--ume);border-color:var(--ume);}
+.sync.bad{background:rgba(232,96,143,.22);color:var(--ume);border-color:var(--ume);}
+
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
+  padding:12px var(--pad) 11px;margin:0 calc(var(--pad)*-1);scroll-snap-type:x proximity;
+  scroll-padding-left:var(--pad);scroll-padding-right:var(--pad);}
+.chips::-webkit-scrollbar{display:none;}
+.chips::after{content:"";flex:0 0 1px;}
+.chip{flex:0 0 auto;scroll-snap-align:start;background:var(--card);border:1px solid var(--line);
+  border-radius:999px;padding:8px 15px;cursor:pointer;color:var(--mute);
+  display:flex;flex-direction:column;align-items:flex-start;min-height:48px;justify-content:center;
+  transition:all .16s ease;}
+.chip .cn{font-size:13.5px;font-weight:700;line-height:1.2;}
+.chip .cd{font-family:'JetBrains Mono',monospace;font-size:9.5px;opacity:.8;margin-top:1px;}
+.chip[aria-selected="true"]{background:var(--ume);border-color:var(--ume);color:#1a0a12;}
+.chip .pc{font-family:'JetBrains Mono',monospace;font-size:9px;background:var(--matcha);
+  color:#0c231d;border-radius:99px;padding:0 5px;margin-left:6px;}
+
+.wrap{padding:0 var(--pad);max-width:760px;margin:0 auto;}
+.panel{display:none;padding-top:18px;}
+.panel.on{display:block;animation:fade .22s ease;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+@media(prefers-reduced-motion:reduce){.panel.on{animation:none;}}
+
+.stub{background:var(--card);border-radius:var(--r);overflow:hidden;box-shadow:0 10px 28px -14px rgba(0,0,0,.7);}
+.stub-top{padding:18px var(--pad) 16px;}
+.legno{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--ume);margin:0 0 4px;}
+.stub-top h2{font-family:'Shippori Mincho',serif;font-weight:800;font-size:26px;margin:0;line-height:1.15;}
+.stub-top h2 .jpn{font-size:16px;color:var(--mute);margin-left:8px;font-weight:600;}
+.daterange{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--matcha);margin-top:6px;}
+.daterange .nights{color:var(--mute);}
+.perf{position:relative;height:20px;background:
+  radial-gradient(circle at 0 50%,var(--night-2) 9px,transparent 10px) left/50% 100% no-repeat,
+  radial-gradient(circle at 100% 50%,var(--night-2) 9px,transparent 10px) right/50% 100% no-repeat,
+  var(--card);}
+.perf::after{content:"";position:absolute;top:50%;left:14px;right:14px;border-top:1.5px dashed var(--line);}
+.stub-bot{padding:4px var(--pad) 18px;background:var(--card);}
+
+.rows{display:grid;gap:1px;background:var(--line);border-radius:10px;overflow:hidden;margin-top:8px;}
+.row{background:var(--card-2);padding:11px 13px;display:flex;align-items:flex-start;gap:12px;}
+.row .k{font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--mute);flex:0 0 84px;padding-top:3px;}
+.row .v{flex:1;min-width:0;}
+.row .v input,.row .v textarea{width:100%;background:transparent;border:none;padding:0;
+  color:var(--frost);font-size:14.5px;line-height:1.45;}
+.row .v textarea{resize:none;overflow:hidden;}
+.row .v input::placeholder,.row .v textarea::placeholder{color:#54608097;}
+.row .v input:focus,.row .v textarea:focus{outline:none;}
+.row:focus-within{background:#26314b;}
+.row.mono .v input{font-family:'JetBrains Mono',monospace;letter-spacing:.05em;font-size:13.5px;}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.minilink{font-family:'JetBrains Mono',monospace;font-size:10.5px;text-decoration:none;
+  border:1px solid var(--line);border-radius:99px;padding:7px 12px;color:var(--matcha);
+  display:inline-flex;align-items:center;gap:5px;min-height:34px;}
+.minilink:active{background:var(--card-2);}
+.pending{background:var(--ume-dim);border:1px dashed var(--ume);border-radius:10px;
+  padding:13px;margin-top:8px;font-size:13px;}
+.pending b{display:block;font-family:'JetBrains Mono',monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ume);margin-bottom:4px;}
+
+.sec-h{display:flex;align-items:center;justify-content:space-between;margin:26px 0 10px;}
+.sec-h h3{font-family:'Shippori Mincho',serif;font-size:17px;margin:0;font-weight:600;}
+.sec-h .meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute);}
+
+/* sub-tabs: Day by day / Photos */
+.seg{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);
+  border-radius:99px;padding:4px;margin:24px 0 14px;}
+.seg button{flex:1;background:transparent;border:none;border-radius:99px;
+  color:var(--mute);font-size:13.5px;font-weight:700;padding:10px 8px;min-height:42px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
+  transition:background .16s ease,color .16s ease;}
+.seg button[aria-selected="true"]{background:var(--card-2);color:var(--frost);
+  box-shadow:inset 0 0 0 1px var(--line);}
+.seg button .n{font-family:'JetBrains Mono',monospace;font-size:10px;
+  background:var(--line);color:var(--mute);border-radius:99px;padding:1px 6px;}
+.seg button[aria-selected="true"] .n{background:var(--ume);color:#1a0a12;}
+.sub{display:none;}
+.sub.on{display:block;animation:fade .18s ease;}
+
+.day{background:var(--card);border-radius:12px;padding:13px 14px;margin-bottom:9px;
+  border-left:3px solid var(--line);}
+.day-h{display:flex;align-items:baseline;gap:9px;margin-bottom:7px;}
+.day-h .dnum{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ume);letter-spacing:.1em;}
+.day-h .ddate{font-size:13px;font-weight:700;}
+.day-h .dtag{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:9px;
+  color:var(--matcha);border:1px solid var(--matcha);border-radius:99px;padding:1px 7px;}
+.plan{width:100%;background:transparent;border:none;color:var(--frost);font-size:14px;
+  line-height:1.5;resize:none;overflow:hidden;padding:0;}
+.plan:focus{outline:none;}
+
+.items{display:flex;flex-direction:column;}
+.item{display:flex;align-items:flex-start;gap:9px;padding:5px 0;}
+.item .bul{flex:0 0 5px;height:5px;border-radius:50%;background:var(--line);margin-top:9px;}
+.item:focus-within .bul{background:var(--ume);}
+.item .del{flex:0 0 auto;background:transparent;border:none;color:#4E5A78;
+  font-size:14px;line-height:1;cursor:pointer;padding:5px 2px 5px 6px;min-height:30px;}
+.item .del:active,.item .del:hover{color:var(--ume);}
+.additem{margin-top:8px;background:transparent;border:1px dashed var(--line);
+  border-radius:99px;color:var(--mute);font-size:12.5px;font-weight:700;
+  padding:8px 14px;min-height:38px;cursor:pointer;width:100%;}
+.additem:active{background:var(--card-2);color:var(--frost);}
+
+/* receipts */
+.tally{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;
+  border:1px solid var(--line);}
+.t-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+.t-yen{font-family:'Shippori Mincho',serif;font-size:28px;font-weight:800;line-height:1;}
+.t-cad{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mute);}
+.t-split{display:flex;gap:14px;margin-top:9px;font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;color:var(--mute);}
+.t-settle{margin-top:11px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:14px;font-weight:700;color:var(--matcha);}
+.t-rate{display:block;margin-top:10px;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;color:#5C6884;}
+.t-rate input{background:transparent;border:none;border-bottom:1px dashed var(--line);
+  color:var(--mute);width:64px;font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  padding:2px 0;text-align:center;}
+.t-rate input:focus{outline:none;border-bottom-color:var(--ume);color:var(--frost);}
+
+.rc{background:var(--card);border-radius:12px;padding:12px 13px;margin-bottom:8px;}
+.rc-top{display:flex;align-items:center;gap:8px;}
+.rc-what{flex:1;min-width:0;background:transparent;border:none;color:var(--frost);
+  font-size:14.5px;font-weight:500;padding:0;}
+.rc-what:focus{outline:none;}
+.rc-what::placeholder{color:#54608097;}
+.rc-bot{display:flex;align-items:center;gap:10px;margin-top:9px;}
+.yen{display:flex;align-items:baseline;gap:3px;flex:1;min-width:0;
+  border-bottom:1px solid var(--line);padding-bottom:4px;}
+.yen span{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--mute);}
+.yen input{flex:1;min-width:0;background:transparent;border:none;color:var(--frost);
+  font-family:'JetBrains Mono',monospace;font-size:16px;padding:0;}
+.yen input:focus{outline:none;}
+.who{display:flex;gap:3px;background:var(--card-2);border-radius:99px;padding:3px;flex:0 0 auto;}
+.who button{background:transparent;border:none;border-radius:99px;color:var(--mute);
+  font-size:12px;font-weight:700;padding:7px 13px;min-height:34px;cursor:pointer;}
+.who button[aria-selected="true"]{background:var(--ume);color:#1a0a12;}
+
+.dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:20px 16px;text-align:center;
+  background:#171F31;margin-bottom:12px;transition:all .16s ease;}
+.dropzone.drag{border-color:var(--ume);background:var(--ume-dim);}
+.dropzone .dzt{font-size:13.5px;font-weight:700;margin-bottom:3px;}
+.dropzone .dzs{font-size:11.5px;color:var(--mute);line-height:1.5;}
+.btn{border:none;border-radius:99px;padding:12px 20px;font-weight:700;font-size:14px;
+  background:var(--ume);color:#1a0a12;cursor:pointer;min-height:44px;}
+.btn:active{transform:scale(.97);}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--frost);}
+.btn.sm{padding:8px 14px;font-size:12.5px;min-height:38px;}
+.btnrow{display:flex;gap:8px;margin-top:12px;justify-content:center;flex-wrap:wrap;}
+input[type=file]{display:none;}
+[data-toast]{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--matcha);
+  margin-top:8px;display:none;line-height:1.6;}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px;}
+@media(min-width:520px){.grid{grid-template-columns:repeat(4,1fr);}}
+.th{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--card);cursor:pointer;}
+.th img{width:100%;height:100%;object-fit:cover;display:block;}
+.th .vt{position:absolute;bottom:4px;left:4px;background:rgba(13,18,32,.85);
+  font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:4px;}
+.th .x{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;
+  background:rgba(13,18,32,.8);color:#fff;border:none;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;}
+.empty{text-align:center;padding:26px 16px;color:var(--mute);font-size:12.5px;
+  border:1px dashed var(--line);border-radius:14px;}
+.empty b{display:block;font-family:'Shippori Mincho',serif;font-size:15px;color:var(--frost);margin-bottom:3px;}
+
+.fab{position:fixed;left:50%;transform:translateX(-50%);
+  bottom:calc(18px + env(safe-area-inset-bottom));z-index:40;background:var(--matcha);
+  color:#0c231d;border:none;border-radius:99px;padding:13px 22px;font-weight:700;
+  font-size:13.5px;cursor:pointer;box-shadow:0 10px 26px -10px rgba(0,0,0,.8);display:none;}
+.sheet-bg{position:fixed;inset:0;background:rgba(6,10,20,.78);z-index:50;display:none;align-items:flex-end;}
+.sheet-bg.on{display:flex;}
+.sheet{background:var(--card);width:100%;max-height:78vh;overflow:auto;
+  border-radius:20px 20px 0 0;padding:8px 16px calc(24px + env(safe-area-inset-bottom));}
+.grab{width:38px;height:4px;background:var(--line);border-radius:9px;margin:6px auto 14px;}
+.sheet h3{font-family:'Shippori Mincho',serif;margin:0 0 3px;font-size:18px;}
+.sheet .sh{font-size:12px;color:var(--mute);margin:0 0 14px;}
+.ui{display:flex;gap:11px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);}
+.ui:last-child{border-bottom:none;}
+.ui img{width:48px;height:48px;object-fit:cover;border-radius:8px;flex:0 0 auto;}
+.ui .m{flex:1;min-width:0;}
+.ui .m .n{font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ui .m .d{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mute);}
+.ui select{background:var(--card-2);border:1px solid var(--line);color:var(--frost);
+  border-radius:8px;padding:9px;font-size:12.5px;max-width:126px;min-height:40px;}
+
+.lb{position:fixed;inset:0;background:rgba(5,8,15,.95);z-index:60;display:none;align-items:center;justify-content:center;padding:16px;}
+.lb.on{display:flex;}
+.lb img{max-width:100%;max-height:82vh;border-radius:10px;}
+.lb .c{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;background:none;
+  border:none;color:#fff;font-size:26px;cursor:pointer;padding:8px;}
+.lb .cap{position:absolute;bottom:calc(22px + env(safe-area-inset-bottom));left:16px;right:16px;
+  text-align:center;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--mute);}
+
+.foot{padding:26px var(--pad) 0;font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:#5C6884;line-height:1.8;text-align:center;}
+:focus-visible{outline:2px solid var(--ume);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brandrow">
+    <h1 class="brand">Japan<span class="jp">日本</span><span class="sync idle" id="sync"></span></h1>
+    <div class="countdown" id="cd"></div>
+  </div>
+  <div class="chips" id="chips" role="tablist"></div>
+</div>
+
+<div class="wrap" id="panels"></div>
+
+<div class="foot">
+  Tap any field to edit · saves automatically<br>
+  Photos sort by their date and location data
+</div>
+
+<button class="fab" id="fab">📥 <span id="fabN">0</span> photos need a leg</button>
+
+<div class="sheet-bg" id="sheetBg">
+  <div class="sheet">
+    <div class="grab"></div>
+    <h3>Which leg?</h3>
+    <p class="sh">Not enough date or location data to place these on their own.</p>
+    <div id="uList"></div>
+    <div class="btnrow"><button class="btn ghost sm" id="sheetClose">Done</button></div>
+  </div>
+</div>
+
+<div class="lb" id="lb">
+  <button class="c" id="lbC" aria-label="Close">✕</button>
+  <img id="lbImg" alt="">
+  <div class="cap" id="lbCap"></div>
+</div>
+
+<input type="file" id="fi" accept="image/*,video/*" multiple>
+
+<script type="module">
+(function(){
+"use strict";
+
+/* ------------------------------------------------------------------
+   Supabase: shared state, photo storage, and live sync between phones.
+   Config lives in config.js. Falls back to a local-only mode if the
+   keys are missing, so the app still opens.
+   ------------------------------------------------------------------ */
+const CFG = window.TRIP_CONFIG || {};
+const BUCKET = CFG.BUCKET || 'trip-media';
+let sb = null, online = false;
+
+async function initDB(){
+ if(!CFG.SUPABASE_URL || !CFG.SUPABASE_ANON_KEY) return false;
+ try{
+  const {createClient} = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  sb = createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY, {auth:{persistSession:false}});
+  online = true;
+  return true;
+ }catch(e){ console.error('Supabase failed to load', e); return false; }
+}
+
+/* keys we just wrote, so realtime echoes of our own edits are ignored */
+const justWrote = new Map();
+const isEcho = k => (justWrote.get(k)||0) > Date.now()-2500;
+
+const store = {
+ async get(k){
+  if(!sb) throw new Error('offline');
+  const {data,error} = await sb.from('docs').select('value').eq('key',k).maybeSingle();
+  if(error) throw error;
+  if(!data) throw new Error('no value for '+k);
+  return {key:k, value:JSON.stringify(data.value)};
+ },
+ async set(k,v){
+  if(!sb) throw new Error('offline');
+  justWrote.set(k, Date.now());
+  status('saving');
+  const {error} = await sb.from('docs')
+    .upsert({key:k, value:JSON.parse(v), updated_at:new Date().toISOString()}, {onConflict:'key'});
+  if(error){ status('error'); throw error; }
+  status('ok');
+  return {key:k, value:v};
+ }
+};
+
+/* status pill */
+let statTimer;
+function status(state){
+ const el=document.getElementById('sync'); if(!el) return;
+ clearTimeout(statTimer);
+ if(state==='saving'){ el.className='sync saving'; el.textContent='Saving'; }
+ else if(state==='error'){ el.className='sync bad'; el.textContent='Not saved'; }
+ else if(state==='offline'){ el.className='sync bad'; el.textContent='Offline'; }
+ else { el.className='sync ok'; el.textContent='Synced';
+        statTimer=setTimeout(()=>{el.className='sync idle';},2000); }
+}
+
+/* live updates from the other phone */
+function watch(){
+ if(!sb) return;
+ sb.channel('docs-live')
+  .on('postgres_changes',{event:'*',schema:'public',table:'docs'}, p=>{
+   const row=p.new||p.old; if(!row||isEcho(row.key)) return;
+   pullSoon();
+  })
+  .subscribe();
+}
+let pullTimer;
+function pullSoon(){
+ clearTimeout(pullTimer);
+ pullTimer=setTimeout(async ()=>{
+  const a=document.activeElement;
+  if(a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA')){ pullSoon(); return; } // wait until they stop typing
+  await load(); chips(); panels(); fab(); status('ok');
+ }, 700);
+}
+
+const LEGS=[
+{id:'tky1',name:'Tokyo',jp:'東京',label:'Leg 1 of 6',short:'Tokyo I',
+ start:'2026-12-26',end:'2026-12-29',gps:[[35.35,36.05],[139.25,140.15]],
+ d:{hotel:'Tokyu Stay Nihonbashi',conf:'72078023041562',
+    checkin:'Sat Dec 26 · from 3:00 PM',checkout:'Tue Dec 29 · before 11:00 AM',
+    addr:'Nihombashi-honcho 4-7-9, Chuo-ku, Tokyo 103-0023',
+    phone:'+81 3 3231 0109',
+    map:'https://maps.google.com/?q=Tokyu+Stay+Nihonbashi+Tokyo',
+    link:'https://www.expedia.ca/Tokyo-Hotels-Tokyu-Stay-Nihombashi.h4191676.Hotel-Information',
+    transit:'Leaving Dec 29: shinkansen to Osaka. Tokyo Station is walkable from Nihonbashi. Buy tickets around Nov 29.'},
+ days:[
+  ['2026-12-26',['Land at Haneda, immigration with the Visit Japan Web QR','Pick up Suica cards','Check in at Nihonbashi from 3:00 PM','Easy first night nearby, or Ginza is one stop away']],
+  ['2026-12-27',['Senso-ji and Asakusa early, before the crowds','Nakamise street for snacks','Ueno in the afternoon','Shinjuku at night, Omoide Yokocho for yakitori']],
+  ['2026-12-28',['Meiji Jingu and Harajuku','Takeshita street','Shibuya Sky or teamLab late afternoon for the light','Save Shibuya properly for the last leg']],
+  ['2026-12-29',['Check out by 11:00 AM','Walk or short ride to Tokyo Station','Shinkansen to Osaka','Dotonbori for dinner']]
+ ]},
+
+{id:'osa',name:'Osaka',jp:'大阪',label:'Leg 2 of 6',short:'Osaka',
+ start:'2026-12-29',end:'2027-01-03',gps:[[34.15,35.20],[135.05,136.05]],
+ d:{hotel:'APA Hotel & Resort Osaka Namba Ekimae Tower',conf:'72078021694353',
+    checkin:'Tue Dec 29 · from 3:00 PM',checkout:'Sun Jan 3 · before 10:00 AM',
+    addr:'1-2-13 Minatomachi, Naniwa-ku, Osaka 556-0017',
+    phone:'+81 570 010 711',
+    map:'https://maps.google.com/?q=APA+Hotel+Resort+Osaka+Namba+Ekimae+Tower',
+    link:'https://www.expedia.ca/Osaka-Hotels-Apa-HotelResort-Osaka-Namba-Ekimae-Tower.h103808809.Hotel-Information',
+    transit:'Leaving Jan 3: shinkansen from Shin-Osaka to Hakata. Buy tickets around Dec 3. Note the 10:00 AM checkout, earliest of the trip.'},
+ days:[
+  ['2026-12-29',['Check in at Namba from 3:00 PM','Dotonbori and the Glico sign','Takoyaki along the canal','Hozenji Yokocho for somewhere quieter']],
+  ['2026-12-30',['Osaka Castle and the park','Shinsekai and Tsutenkaku','Kushikatsu for dinner','Den Den Town if there is time']],
+  ['2026-12-31',['Universal Studios Japan, full day','New Year countdown at the park','Book tickets and express passes well ahead','Train back to Namba']],
+  ['2027-01-01',['Kyoto day trip','Fushimi Inari, expect hatsumode crowds','Kiyomizu-dera and Gion','Check openings, plenty of places close Jan 1']],
+  ['2027-01-02',['Nara day trip on the JR Yamatoji line','Deer park','Todai-ji and the Great Buddha','Kasuga Taisha if the light holds']],
+  ['2027-01-03',['Check out by 10:00 AM, earliest of the trip','Shinkansen to Fukuoka','Nakasu yatai for the first night']]
+ ]},
+
+{id:'fuk',name:'Fukuoka',jp:'福岡',label:'Leg 3 of 6',short:'Fukuoka',
+ start:'2027-01-03',end:'2027-01-05',gps:[[33.35,33.80],[130.20,130.60]],
+ d:{hotel:'Tokyu Stay Fukuoka Tenjin',conf:'72078021767917',
+    checkin:'Sun Jan 3 · from 3:00 PM',checkout:'Tue Jan 5 · before 11:00 AM',
+    addr:'3-21-24 Haruyoshi, Chuo-ku, Fukuoka 810-0003',
+    phone:'+81 92 762 0109',
+    map:'https://maps.google.com/?q=Tokyu+Stay+Fukuoka+Tenjin',
+    link:'https://www.expedia.ca/Fukuoka-Hotels-Tokyu-Stay-Fukuoka-Tenjin.h31557757.Hotel-Information',
+    transit:'Leaving Jan 5: flight to Naha, not booked yet. Fukuoka Airport is roughly five minutes by subway from Hakata Station, so the morning stays relaxed.'},
+ days:[
+  ['2027-01-03',['Check in at Haruyoshi from 3:00 PM','Walk over to the Nakasu yatai stalls','Ramen and yakitori by the river']],
+  ['2027-01-04',['Dazaifu Tenmangu, about 40 minutes out','Ohori Park','Canal City and Tenjin for shopping','Hakata ramen for dinner']],
+  ['2027-01-05',['Check out by 11:00 AM','Subway to Fukuoka Airport, about five minutes from Hakata','Fly to Naha']]
+ ]},
+
+{id:'oki1',name:'Okinawa',jp:'沖縄',label:'Leg 4 of 6',short:'Pineapple',
+ start:'2027-01-05',end:'2027-01-07',gps:[[24.00,27.95],[122.40,131.60]],
+ pending:'Add the hotel, confirmation and check-in times here once it is booked.',
+ d:{hotel:'',conf:'',checkin:'Tue Jan 5',checkout:'Thu Jan 7',
+    addr:'',phone:'',map:'',link:'',
+    transit:'In Jan 5 by air from Fukuoka, flight not booked yet. Out Jan 7, moving to the second Okinawa hotel.'},
+ days:[
+  ['2027-01-05',['Land at Naha','Head to the first hotel and settle in','Okinawa soba and awamori for dinner']],
+  ['2027-01-06',['Churaumi Aquarium','Cape Manzamo for the cliffs near sunset','A rental car makes this day much easier']],
+  ['2027-01-07',['Check out','Move to the Naha hotel','Keep plans loose either side of the transfer']]
+ ]},
+
+{id:'oki2',name:'Okinawa',jp:'沖縄',label:'Leg 5 of 6',short:'Naha',
+ start:'2027-01-07',end:'2027-01-09',gps:[[24.00,27.95],[122.40,131.60]],
+ pending:'Add the hotel, confirmation and check-in times here once it is booked.',
+ d:{hotel:'',conf:'',checkin:'Thu Jan 7',checkout:'Sat Jan 9',
+    addr:'',phone:'',map:'',link:'',
+    transit:'In Jan 7 from the first Okinawa hotel. Out Jan 9 by air to Tokyo, flight not booked yet.'},
+ days:[
+  ['2027-01-07',['Check in','Kokusai-dori in the evening','Makishi market','Dinner around the market street']],
+  ['2027-01-08',['Shuri Castle and the Ryukyu sites','American Village in Chatan in the evening','Ferris wheel and food','Last full day in Okinawa']],
+  ['2027-01-09',['Check out','Back to Naha airport','Fly up to Tokyo']]
+ ]},
+
+{id:'tky2',name:'Tokyo',jp:'東京',label:'Leg 6 of 6',short:'Tokyo II',
+ start:'2027-01-09',end:'2027-01-11',gps:[[35.35,36.05],[139.25,140.15]],
+ d:{hotel:'Shibuya Tobu Hotel',conf:'72078021894983',
+    checkin:'Sat Jan 9 · from 2:00 PM',checkout:'Mon Jan 11 · before 11:00 AM',
+    addr:'3-1 Udagawa-cho, Shibuya-ku, Tokyo 150-0042',
+    phone:'+81 3 3476 0111',
+    map:'https://maps.google.com/?q=Shibuya+Tobu+Hotel+Tokyo',
+    link:'https://www.expedia.ca/Tokyo-Hotels-Shibuya-Tobu-Hotel.h2976143.Hotel-Information',
+    transit:'In Jan 9 from Naha. Leaving Jan 11 from Haneda — allow around 40 minutes from Shibuya, either the airport bus or the Yamanote and Keikyu lines.'},
+ days:[
+  ['2027-01-09',['Fly up from Okinawa','Check in behind Shibuya Scramble from 2:00 PM','Dinner in Shibuya or Ebisu']],
+  ['2027-01-10',['Akihabara','Tokyo Station Character Street','Don Quijote for anything left on the list','Leave the evening free to pack']],
+  ['2027-01-11',['Check out by 11:00 AM','Out to Haneda','Fly home']]
+ ]}
+];
+
+const F=[
+ {k:'hotel',label:'Hotel',ph:'Not booked yet'},
+ {k:'conf',label:'Confirm #',ph:'—',mono:true},
+ {k:'checkin',label:'Check in',ph:'—'},
+ {k:'checkout',label:'Check out',ph:'—'},
+ {k:'addr',label:'Address',ph:'—',multi:true},
+ {k:'phone',label:'Phone',ph:'—',mono:true},
+ {k:'transit',label:'Travel day',ph:'—',multi:true}
+];
+
+let S={it:{},ph:{},rc:{},un:[],rate:0.0094},act=LEGS[0].id,sub='plan',target=null;
+
+async function load(){
+ for(const L of LEGS){
+  S.it[L.id]={...L.d,days:L.days.map(d=>[...d[1]])};
+  try{const r=await store.get('it2:'+L.id);if(r&&r.value){
+   const sv=JSON.parse(r.value);
+   if(Array.isArray(sv.days))sv.days=sv.days.map(d=>typeof d==='string'?(d.trim()?[d]:[]):(Array.isArray(d)?d:[]));
+   S.it[L.id]={...S.it[L.id],...sv};
+  }}catch(e){}
+  S.ph[L.id]=[];
+  try{const r=await store.get('ph2:'+L.id);if(r&&r.value)S.ph[L.id]=JSON.parse(r.value);}catch(e){}
+  S.rc[L.id]=[];
+  try{const r=await store.get('rc2:'+L.id);if(r&&r.value)S.rc[L.id]=JSON.parse(r.value);}catch(e){}
+ }
+ try{const r=await store.get('rate2');if(r&&r.value){const v=parseFloat(JSON.parse(r.value));if(v>0)S.rate=v;}}catch(e){}
+ try{const r=await store.get('un2');if(r&&r.value)S.un=JSON.parse(r.value);}catch(e){}
+}
+const save=(k,v)=>store.set(k,JSON.stringify(v)).catch(e=>console.error('save failed',k,e));
+
+function countdown(){
+ const L=LEGS.find(l=>l.id===act)||LEGS[0];
+ const now=new Date();now.setHours(0,0,0,0);
+ const s=new Date(L.start+'T00:00:00'),e=new Date(L.end+'T00:00:00');
+ const el=document.getElementById('cd');
+ const line2=rng(L.start,L.end);
+ if(now<s){
+  const d=Math.round((s-now)/86400000);
+  el.innerHTML=`<b>${d}</b> ${d===1?'day':'days'} to ${L.name}<br>${line2}`;
+ }else if(now<e){
+  const left=Math.round((e-now)/86400000);
+  el.innerHTML=`In <b>${L.name}</b> now<br>${left} ${left===1?'night':'nights'} left`;
+ }else{
+  el.innerHTML=`${L.name} · done<br>${line2}`;
+ }
+}
+
+const rng=(s,e)=>{const o={month:'short',day:'numeric'};
+ return new Date(s+'T00:00:00').toLocaleDateString('en-US',o).toUpperCase()+' – '+
+        new Date(e+'T00:00:00').toLocaleDateString('en-US',o).toUpperCase();};
+const nights=(s,e)=>Math.round((new Date(e)-new Date(s))/86400000);
+const esc=s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function chips(){
+ const c=document.getElementById('chips');
+ const keep=c.scrollLeft;
+ c.innerHTML='';
+ LEGS.forEach(L=>{
+  const n=(S.ph[L.id]||[]).length;
+  const b=document.createElement('button');
+  b.className='chip';b.setAttribute('role','tab');b.setAttribute('aria-selected',L.id===act);
+  b.innerHTML=`<span class="cn">${L.short}${n?`<span class="pc">${n}</span>`:''}</span>
+   <span class="cd">${rng(L.start,L.end)}</span>`;
+  b.onclick=()=>{act=L.id;chips();panels();countdown();window.scrollTo({top:0,behavior:'smooth'});};
+  c.appendChild(b);
+ });
+ c.scrollLeft=keep;
+}
+
+function panels(){
+ const root=document.getElementById('panels');root.innerHTML='';
+ LEGS.forEach(L=>{
+  const p=document.createElement('section');
+  p.className='panel'+(L.id===act?' on':'');p.dataset.leg=L.id;
+  const it=S.it[L.id];
+
+  p.innerHTML=`
+   <div class="stub">
+    <div class="stub-top">
+     <p class="legno">${L.label}</p>
+     <h2>${L.name}<span class="jpn">${L.jp}</span></h2>
+     <div class="daterange">${rng(L.start,L.end)} <span class="nights">· ${nights(L.start,L.end)} nights</span></div>
+    </div>
+    <div class="perf"></div>
+    <div class="stub-bot">
+     ${(L.pending&&!it.hotel)?`<div class="pending"><b>Still to book</b>${L.pending}</div>`:''}
+     <div class="rows" data-rows></div>
+     <div class="links" data-links></div>
+    </div>
+   </div>
+
+   <div class="seg" role="tablist">
+    <button role="tab" data-sub="plan">Days</button>
+    <button role="tab" data-sub="photos">Photos <span class="n" data-segn>0</span></button>
+    <button role="tab" data-sub="receipts">Receipts</button>
+   </div>
+
+   <div class="sub" data-subpane="plan">
+    <div class="sec-h"><h3>Day by day</h3><span class="meta">${L.days.length} days</span></div>
+    <div data-days></div>
+   </div>
+
+   <div class="sub" data-subpane="photos">
+    <div class="sec-h"><h3>Photos &amp; videos</h3><span class="meta" data-pc></span></div>
+    <div class="dropzone" data-dz>
+     <div class="dzt">Drop photos here</div>
+     <div class="dzs">Sorted into the right leg using each photo's date and location</div>
+     <div class="btnrow">
+      <button class="btn sm" data-pick>Choose photos</button>
+      <button class="btn ghost sm" data-pickhere>Add to ${L.short}</button>
+     </div>
+     <div data-toast></div>
+    </div>
+    <div data-gal></div>
+   </div>
+
+   <div class="sub" data-subpane="receipts">
+    <div class="sec-h"><h3>Shared food</h3><span class="meta" data-rcount></span></div>
+    <div class="tally" data-tally></div>
+    <div data-rlist></div>
+    <button class="additem" data-addrc>+ Add a receipt</button>
+   </div>`;
+
+  const rw=p.querySelector('[data-rows]');
+  F.forEach(f=>{
+   const r=document.createElement('div');
+   r.className='row'+(f.mono?' mono':'');
+   r.innerHTML=`<div class="k">${f.label}</div><div class="v">${
+    f.multi?`<textarea data-k="${f.k}" rows="1" placeholder="${f.ph}">${esc(it[f.k]||'')}</textarea>`
+           :`<input data-k="${f.k}" value="${esc(it[f.k]||'')}" placeholder="${f.ph}">`}</div>`;
+   rw.appendChild(r);
+  });
+  let t1;
+  rw.addEventListener('input',e=>{
+   const k=e.target.dataset.k;if(!k)return;
+   it[k]=e.target.value;autosize(e.target);
+   clearTimeout(t1);t1=setTimeout(()=>save('it2:'+L.id,it),600);
+  });
+
+  const lw=p.querySelector('[data-links]');
+  if(it.map)lw.insertAdjacentHTML('beforeend',`<a class="minilink" href="${it.map}" target="_blank" rel="noopener">◎ Directions</a>`);
+  if(it.link)lw.insertAdjacentHTML('beforeend',`<a class="minilink" href="${it.link}" target="_blank" rel="noopener">▤ Hotel page</a>`);
+  if(it.phone)lw.insertAdjacentHTML('beforeend',`<a class="minilink" href="tel:${it.phone.replace(/[^\d+]/g,'')}">☎ Call hotel</a>`);
+
+  const dw=p.querySelector('[data-days]');
+  const drawDays=()=>{
+   dw.innerHTML='';
+   L.days.forEach((d,i)=>{
+    const dt=new Date(d[0]+'T00:00:00');
+    const tag=i===0?'Check in':(i===L.days.length-1?'Check out':'');
+    const items=it.days[i]||(it.days[i]=[]);
+    const el=document.createElement('div');el.className='day';
+    el.innerHTML=`<div class="day-h">
+      <span class="dnum">D${i+1}</span>
+      <span class="ddate">${dt.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</span>
+      ${tag?`<span class="dtag">${tag}</span>`:''}</div>
+     <div class="items">${items.map((t,j)=>`
+       <div class="item">
+        <span class="bul"></span>
+        <textarea class="plan" data-i="${i}" data-j="${j}" rows="1"
+         placeholder="What are we doing?">${esc(t)}</textarea>
+        <button class="del" data-del="${i}:${j}" aria-label="Delete this">✕</button>
+       </div>`).join('')}
+     </div>
+     <button class="additem" data-add="${i}">+ Add something</button>`;
+    dw.appendChild(el);
+   });
+   requestAnimationFrame(()=>dw.querySelectorAll('textarea').forEach(autosize));
+  };
+  drawDays();
+
+  let t2;
+  dw.addEventListener('input',e=>{
+   const i=e.target.dataset.i,j=e.target.dataset.j;
+   if(i===undefined||j===undefined)return;
+   it.days[+i][+j]=e.target.value;autosize(e.target);
+   clearTimeout(t2);t2=setTimeout(()=>save('it2:'+L.id,it),600);
+  });
+  dw.addEventListener('click',e=>{
+   const add=e.target.dataset.add,del=e.target.dataset.del;
+   if(add!==undefined){
+    it.days[+add].push('');
+    save('it2:'+L.id,it);drawDays();
+    const boxes=dw.querySelectorAll(`textarea[data-i="${+add}"]`);
+    if(boxes.length)boxes[boxes.length-1].focus();
+   }else if(del!==undefined){
+    const[a,b]=del.split(':').map(Number);
+    it.days[a].splice(b,1);
+    save('it2:'+L.id,it);drawDays();
+   }
+  });
+
+  p.querySelector('[data-pick]').onclick=()=>{target=null;document.getElementById('fi').click();};
+  p.querySelector('[data-pickhere]').onclick=()=>{target=L.id;document.getElementById('fi').click();};
+  const dz=p.querySelector('[data-dz]');
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');}));
+  dz.addEventListener('drop',e=>{target=null;if(e.dataTransfer.files.length)handle(e.dataTransfer.files);});
+
+  const rl=p.querySelector('[data-rlist]');
+  const drawRc=()=>{
+   const rc=S.rc[L.id]||(S.rc[L.id]=[]);
+   rl.innerHTML=rc.length?'':`<div class="empty"><b>No receipts yet</b>Add what you spent together and it splits down the middle.</div>`;
+   rc.forEach((r,i)=>{
+    const el=document.createElement('div');el.className='rc';
+    el.innerHTML=`
+     <div class="rc-top">
+      <input class="rc-what" data-rw="${i}" value="${esc(r.w||'')}" placeholder="What was it?">
+      <button class="del" data-rdel="${i}" aria-label="Delete">✕</button>
+     </div>
+     <div class="rc-bot">
+      <div class="yen"><span>¥</span><input inputmode="decimal" class="rc-amt" data-ra="${i}"
+        value="${r.y||''}" placeholder="0"></div>
+      <div class="who" data-rwho="${i}">
+       <button data-p="B" aria-selected="${r.p!=='N'}">Me</button>
+       <button data-p="N" aria-selected="${r.p==='N'}">Nana</button>
+      </div>
+     </div>`;
+    rl.appendChild(el);
+   });
+   tally();
+  };
+  const tally=()=>{
+   const rc=S.rc[L.id]||[];
+   const num=v=>{const n=parseFloat(String(v).replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
+   const mine=rc.filter(r=>r.p!=='N').reduce((a,r)=>a+num(r.y),0);
+   const hers=rc.filter(r=>r.p==='N').reduce((a,r)=>a+num(r.y),0);
+   const total=mine+hers, each=total/2, diff=mine-each;
+   const cad=v=>'$'+(v*S.rate).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
+   const settle = Math.abs(diff)<0.5 ? 'Even, nothing to settle'
+     : (diff>0 ? `Nana owes you ¥${Math.round(diff).toLocaleString()}`
+               : `You owe Nana ¥${Math.round(-diff).toLocaleString()}`);
+   p.querySelector('[data-rcount]').textContent=rc.length?`${rc.length} receipt${rc.length>1?'s':''}`:'';
+   p.querySelector('[data-tally]').innerHTML=`
+    <div class="t-main"><span class="t-yen">¥${Math.round(total).toLocaleString()}</span>
+     <span class="t-cad">${cad(total)} CAD</span></div>
+    <div class="t-split"><span>Me ¥${Math.round(mine).toLocaleString()}</span>
+     <span>Nana ¥${Math.round(hers).toLocaleString()}</span></div>
+    <div class="t-settle">${settle}</div>
+    <label class="t-rate">¥1 = <input inputmode="decimal" data-rate value="${S.rate}"> CAD</label>`;
+  };
+  drawRc();
+
+  let t3;
+  const savRc=()=>{clearTimeout(t3);t3=setTimeout(()=>save('rc2:'+L.id,S.rc[L.id]),600);};
+  p.querySelector('[data-subpane="receipts"]').addEventListener('input',e=>{
+   const w=e.target.dataset.rw,a=e.target.dataset.ra;
+   if(w!==undefined){S.rc[L.id][+w].w=e.target.value;savRc();}
+   else if(a!==undefined){S.rc[L.id][+a].y=e.target.value;tally();savRc();}
+   else if(e.target.dataset.rate!==undefined){
+    const v=parseFloat(e.target.value);
+    if(!isNaN(v)&&v>0){S.rate=v;save('rate2',S.rate);tally();}
+   }
+  });
+  p.querySelector('[data-subpane="receipts"]').addEventListener('click',e=>{
+   const btn=e.target.closest('button');if(!btn)return;
+   if(btn.dataset.addrc!==undefined){
+    S.rc[L.id].push({w:'',y:'',p:'B'});save('rc2:'+L.id,S.rc[L.id]);drawRc();
+    const ins=rl.querySelectorAll('.rc-what');if(ins.length)ins[ins.length-1].focus();
+   }else if(btn.dataset.rdel!==undefined){
+    S.rc[L.id].splice(+btn.dataset.rdel,1);save('rc2:'+L.id,S.rc[L.id]);drawRc();
+   }else if(btn.dataset.p){
+    const i=+btn.parentElement.dataset.rwho;
+    S.rc[L.id][i].p=btn.dataset.p;
+    btn.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
+    tally();save('rc2:'+L.id,S.rc[L.id]);
+   }
+  });
+
+  const seg=p.querySelector('.seg');
+  const setSub=k=>{
+   sub=k;
+   seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.sub===k));
+   p.querySelectorAll('.sub').forEach(s=>s.classList.toggle('on',s.dataset.subpane===k));
+   requestAnimationFrame(()=>p.querySelectorAll('.sub.on textarea').forEach(autosize));
+  };
+  seg.querySelectorAll('button').forEach(b=>b.onclick=()=>setSub(b.dataset.sub));
+  p.querySelector('[data-segn]').textContent=(S.ph[L.id]||[]).length;
+  setSub(sub);
+
+  gallery(p,L.id);
+  root.appendChild(p);
+ });
+ requestAnimationFrame(()=>document.querySelectorAll('.sub.on textarea, .rows textarea').forEach(autosize));
+}
+function autosize(el){if(!el||el.tagName!=='TEXTAREA')return;el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+
+function gallery(p,id){
+ const g=p.querySelector('[data-gal]'),list=S.ph[id]||[];
+ p.querySelector('[data-pc]').textContent=list.length?`${list.length} saved`:'';
+ const sn=p.querySelector('[data-segn]');if(sn)sn.textContent=list.length;
+ if(!list.length){g.innerHTML=`<div class="empty"><b>Nothing here yet</b>Photos taken during this leg will land here.</div>`;return;}
+ const grid=document.createElement('div');grid.className='grid';
+ list.forEach(o=>{
+  const t=document.createElement('div');t.className='th';
+  t.innerHTML=`<img src="${o.t||o.u}" alt="" loading="lazy">${o.v?'<span class="vt">VID</span>':''}
+   <button class="x" aria-label="Remove">✕</button>`;
+  t.querySelector('.x').onclick=e=>{e.stopPropagation();
+   S.ph[id]=S.ph[id].filter(x=>x.id!==o.id);save('ph2:'+id,S.ph[id]);gallery(p,id);chips();};
+  t.onclick=()=>{
+   document.getElementById('lbImg').src=o.o||o.t||o.u;
+   document.getElementById('lbCap').textContent=`${o.n}${o.d?' · '+o.d:''}${o.v?' · video preview only':''}`;
+   document.getElementById('lb').classList.add('on');};
+  grid.appendChild(t);
+ });
+ g.innerHTML='';g.appendChild(grid);
+}
+
+document.getElementById('fi').onchange=e=>{handle(e.target.files);e.target.value='';};
+
+async function handle(files){
+ const arr=[...files];if(!arr.length)return;
+ const toast=document.querySelector('.panel.on [data-toast]');
+ toast.style.display='block';
+ const tally={};let un=0,fail=0,done=0;
+ for(const f of arr){
+  toast.textContent=`Uploading ${done+1} of ${arr.length}\u2026`;
+  try{
+   const vid=f.type.startsWith('video/');
+   const r=vid?await vidThumb(f):await imgThumb(f);
+   if(!r){fail++;continue;}
+   const up=await upload(f,r.url,vid);
+   if(!up){fail++;continue;}
+   const leg=target||match(r.date,r.gps);
+   const rec={id:up.id, v:vid, t:up.t, o:up.o, n:f.name, d:r.date||''};
+   if(leg){S.ph[leg]=S.ph[leg]||[];S.ph[leg].push(rec);await save('ph2:'+leg,S.ph[leg]);tally[leg]=(tally[leg]||0)+1;}
+   else{S.un.push(rec);un++;}
+  }catch(e){fail++;console.error(f.name,e);}
+  done++;
+ }
+ await save('un2',S.un);
+ const bits=Object.entries(tally).map(([k,n])=>`${n} \u2192 ${LEGS.find(l=>l.id===k).short}`);
+ if(un)bits.push(`${un} need a leg`);
+ if(fail)bits.push(`${fail} failed`);
+ toast.textContent=bits.length?bits.join(' \u00b7 '):'Nothing added.';
+ setTimeout(()=>{toast.style.display='none';},6000);
+ chips();panels();fab();
+}
+
+/* thumbnail always uploads; original only when UPLOAD_ORIGINALS is on
+   (leave it off on the Supabase free tier, see README) */
+const MAX_FREE=50*1024*1024;
+async function upload(file,thumbDataUrl,isVideo){
+ if(!sb){status('offline');return null;}
+ const id=(crypto.randomUUID?crypto.randomUUID():'p'+Date.now()+Math.random().toString(36).slice(2));
+ const pub=path=>sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+ try{
+  const tb=await (await fetch(thumbDataUrl)).blob();
+  const tPath=`thumbs/${id}.jpg`;
+  const t=await sb.storage.from(BUCKET).upload(tPath,tb,{contentType:'image/jpeg',upsert:true});
+  if(t.error)throw t.error;
+  let oUrl=null;
+  const wantOriginal = CFG.UPLOAD_ORIGINALS && !isVideo;
+  if(wantOriginal && file.size<=(CFG.MAX_FILE_BYTES||MAX_FREE)){
+   const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
+   const oPath=`originals/${id}.${ext||'jpg'}`;
+   const o=await sb.storage.from(BUCKET).upload(oPath,file,{contentType:file.type||'image/jpeg',upsert:true});
+   if(!o.error)oUrl=pub(oPath);
+  }
+  status('ok');
+  return {id, t:pub(tPath), o:oUrl};
+ }catch(e){ console.error('upload failed',e); status('error'); return null; }
+}
+
+function imgThumb(file){
+ return new Promise(res=>{
+  const fr=new FileReader();
+  fr.onload=e=>{
+   const img=new Image();
+   img.onload=()=>{
+    const M=1000;let w=img.width,h=img.height;
+    if(w>h&&w>M){h=Math.round(h*M/w);w=M;}else if(h>=w&&h>M){w=Math.round(w*M/h);h=M;}
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    const url=c.toDataURL('image/jpeg',.6);
+    try{
+     EXIF.getData(img,function(){
+      const dt=EXIF.getTag(this,'DateTimeOriginal')||EXIF.getTag(this,'DateTime');
+      const m=dt&&dt.match(/^(\d{4}):(\d{2}):(\d{2})/);
+      const la=EXIF.getTag(this,'GPSLatitude'),lo=EXIF.getTag(this,'GPSLongitude');
+      const lr=EXIF.getTag(this,'GPSLatitudeRef'),orf=EXIF.getTag(this,'GPSLongitudeRef');
+      res({url,date:m?`${m[1]}-${m[2]}-${m[3]}`:null,gps:(la&&lo)?[dms(la,lr),dms(lo,orf)]:null});
+     });
+    }catch(err){res({url,date:null,gps:null});}
+   };
+   img.onerror=()=>res(null);img.src=e.target.result;
+  };
+  fr.onerror=()=>res(null);fr.readAsDataURL(file);
+ });
+}
+const dms=(a,r)=>{const d=a[0]+a[1]/60+a[2]/3600;return(r==='S'||r==='W')?-d:d;};
+
+function vidThumb(file){
+ return new Promise(res=>{
+  const url=URL.createObjectURL(file);
+  const v=document.createElement('video');
+  v.src=url;v.muted=true;v.playsInline=true;
+  let done=false;
+  const grab=()=>{
+   if(done)return;done=true;
+   const M=800;let w=v.videoWidth||400,h=v.videoHeight||300;
+   if(w>M){h=Math.round(h*M/w);w=M;}
+   const c=document.createElement('canvas');c.width=w;c.height=h;
+   try{c.getContext('2d').drawImage(v,0,0,w,h);
+    const u=c.toDataURL('image/jpeg',.55);URL.revokeObjectURL(url);
+    res({url:u,date:file.lastModified?new Date(file.lastModified).toISOString().slice(0,10):null,gps:null});
+   }catch(e){URL.revokeObjectURL(url);res(null);}
+  };
+  v.onloadeddata=()=>{try{v.currentTime=Math.min(.4,(v.duration||1)/4);}catch(e){grab();}};
+  v.onseeked=grab;v.onerror=()=>res(null);setTimeout(grab,4000);
+ });
+}
+
+function match(date,gps){
+ let byDate=[];
+ if(date){byDate=LEGS.filter(L=>date>=L.start&&date<=L.end);if(byDate.length===1)return byDate[0].id;}
+ if(gps){
+  const pool=byDate.length?byDate:LEGS;
+  const hit=pool.filter(L=>{const a=L.gps[0][0],b=L.gps[0][1],c=L.gps[1][0],d=L.gps[1][1];
+   return gps[0]>=a&&gps[0]<=b&&gps[1]>=c&&gps[1]<=d;});
+  if(hit.length===1)return hit[0].id;
+ }
+ return null;
+}
+
+function fab(){
+ const b=document.getElementById('fab');
+ document.getElementById('fabN').textContent=S.un.length;
+ b.style.display=S.un.length?'block':'none';
+ const l=document.getElementById('uList');l.innerHTML='';
+ S.un.forEach(o=>{
+  const r=document.createElement('div');r.className='ui';
+  r.innerHTML=`<img src="${o.t||o.u}" alt="">
+   <div class="m"><div class="n">${esc(o.n)}</div>
+   <div class="d">${o.d||'no date found'}${o.v?' · video':''}</div></div>
+   <select><option value="">Choose…</option>${LEGS.map(L=>`<option value="${L.id}">${L.short}</option>`).join('')}</select>`;
+  r.querySelector('select').onchange=async e=>{
+   const id=e.target.value;if(!id)return;
+   S.ph[id]=S.ph[id]||[];S.ph[id].push(o);
+   S.un=S.un.filter(x=>x.id!==o.id);
+   await save('ph2:'+id,S.ph[id]);await save('un2',S.un);
+   fab();chips();panels();
+  };
+  l.appendChild(r);
+ });
+}
+document.getElementById('fab').onclick=()=>document.getElementById('sheetBg').classList.add('on');
+document.getElementById('sheetClose').onclick=()=>document.getElementById('sheetBg').classList.remove('on');
+document.getElementById('sheetBg').onclick=e=>{if(e.target.id==='sheetBg')e.currentTarget.classList.remove('on');};
+document.getElementById('lbC').onclick=()=>document.getElementById('lb').classList.remove('on');
+document.getElementById('lb').onclick=e=>{if(e.target.id==='lb')e.currentTarget.classList.remove('on');};
+
+(async function(){
+ const ok=await initDB();
+ if(!ok){
+  status('offline');
+  document.getElementById('panels').innerHTML=
+   `<div class="empty" style="margin-top:30px"><b>Not connected</b>
+    Add your Supabase URL and anon key to <code>config.js</code>, then reload.
+    See README.md for the setup steps.</div>`;
+  return;
+ }
+ await load();chips();countdown();panels();fab();watch();status('ok');
+})();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Japan Trip",
+  "short_name": "Japan",
+  "description": "Itinerary, photos and shared receipts for Japan, Dec 2026 - Jan 2027",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0D1220",
+  "theme_color": "#0D1220"
+}

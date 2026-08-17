@@ -1,0 +1,27 @@
+/* Supabase connection.
+   Fill these two in from your Supabase dashboard:
+   Project Settings -> API -> Project URL, and the "anon public" key.
+
+   The anon key is designed to be sent to browsers, so it is not a secret in the
+   usual sense. It is still worth keeping this repo PRIVATE, because anyone who
+   finds these values can read and write the trip data. Do not put anything
+   sensitive in the receipt notes.
+*/
+window.TRIP_CONFIG = {
+  SUPABASE_URL: "",
+  SUPABASE_ANON_KEY: "",
+
+  // Storage bucket name. Must match the bucket created in schema.sql.
+  BUCKET: "trip-media",
+
+  /* Free tier: leave this false.
+     Only compressed thumbnails (~150 KB) get uploaded, which keeps you well
+     inside the 1 GB storage and 5 GB egress allowances.
+
+     Set to true after upgrading to Pro. Full-resolution originals then upload
+     alongside each thumbnail, and tapping a photo loads the original. */
+  UPLOAD_ORIGINALS: false,
+
+  // Skip originals larger than this. Free tier hard-caps at 50 MB per file.
+  MAX_FILE_BYTES: 50 * 1024 * 1024
+};
