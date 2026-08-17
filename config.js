@@ -8,8 +8,8 @@
    sensitive in the receipt notes.
 */
 window.TRIP_CONFIG = {
-  SUPABASE_URL: "",
-  SUPABASE_ANON_KEY: "",
+  SUPABASE_URL: "https://qcimktmonxvnwxfbrxnf.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjaW1rdG1vbnh2bnd4ZmJyeG5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Mjg4NDAsImV4cCI6MjEwMjUwNDg0MH0.Tlzqy2aU8SH7V0HpQAMVxwcDjK7MjFEObDXMLCevkII",
 
   // Storage bucket name. Must match the bucket created in schema.sql.
   BUCKET: "trip-media",
