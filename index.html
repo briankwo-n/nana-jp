@@ -162,10 +162,10 @@ a{color:var(--matcha);}
 .item.dragging .plan{pointer-events:none;}
 .item .bul{flex:0 0 5px;height:5px;border-radius:50%;background:var(--line);margin-top:11px;}
 .item:focus-within .bul{background:var(--ume);}
-.item .del,.rc-top .del,.note-top .del{flex:0 0 auto;background:transparent;border:none;color:#4E5A78;
-  font-size:14px;line-height:1;cursor:pointer;padding:5px 2px 5px 6px;min-height:30px;}
+.item .del,.rc-top .del,.note-top .del,.comment-top .del{flex:0 0 auto;background:transparent;
+  border:none;color:#4E5A78;font-size:14px;line-height:1;cursor:pointer;padding:5px 2px 5px 6px;min-height:30px;}
 .item .del:active,.item .del:hover,.rc-top .del:active,.rc-top .del:hover,
-.note-top .del:active,.note-top .del:hover{color:var(--ume);}
+.note-top .del:active,.note-top .del:hover,.comment-top .del:active,.comment-top .del:hover{color:var(--ume);}
 .additem{margin-top:8px;background:transparent;border:1px dashed var(--line);
   border-radius:99px;color:var(--mute);font-size:12.5px;font-weight:700;
   padding:8px 14px;min-height:38px;cursor:pointer;width:100%;}
@@ -174,6 +174,10 @@ a{color:var(--matcha);}
 /* receipts */
 .tally{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;
   border:1px solid var(--line);}
+.tally.trip{border-color:var(--ume);margin-bottom:10px;}
+.tally.trip .t-yen{color:var(--ume);}
+.t-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--mute);margin-bottom:9px;}
 .t-main{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
 .t-yen{font-family:'Shippori Mincho',serif;font-size:28px;font-weight:800;line-height:1;}
 .t-cad{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--mute);}
@@ -217,6 +221,24 @@ a{color:var(--matcha);}
   line-height:1.5;resize:none;overflow:hidden;padding:0;}
 .note-text:focus{outline:none;}
 .note-text::placeholder{color:#54608097;}
+.cbtn{margin-top:10px;background:transparent;border:1px solid var(--line);border-radius:99px;
+  color:var(--mute);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.02em;
+  padding:7px 13px;min-height:34px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;}
+.cbtn:active{background:var(--card-2);color:var(--frost);}
+.cbtn[aria-expanded="true"]{border-color:var(--ume);color:var(--ume);}
+.note-thread{margin-top:11px;padding-left:12px;border-left:2px solid var(--line);
+  display:flex;flex-direction:column;gap:8px;}
+.note-thread[hidden]{display:none;}
+.comment{background:var(--card-2);border-radius:10px;padding:9px 11px;}
+.comment-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.comment .cm-who{flex:0 0 auto;background:var(--night-2);}
+.comment .cm-who button{padding:5px 11px;min-height:28px;font-size:11px;}
+.cm-date{flex:1;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mute);text-align:right;}
+.cm-text{width:100%;background:transparent;border:none;color:var(--frost);font-size:15px;
+  line-height:1.45;resize:none;overflow:hidden;padding:0;}
+.cm-text:focus{outline:none;}
+.cm-text::placeholder{color:#54608097;}
+.cm-add{margin-top:2px;font-size:11.5px;min-height:34px;}
 
 .dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:20px 16px;text-align:center;
   background:#171F31;margin-bottom:12px;transition:all .16s ease;}
@@ -664,6 +686,43 @@ function chips(){
  c.scrollLeft=keep;
 }
 
+/* Receipt maths, shared so the whole-trip total can be recomputed and shown
+   on every leg's Receipts tab. */
+const rcNum=v=>{const n=parseFloat(String(v).replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
+const rcCad=v=>'$'+(v*S.rate).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
+const rcSum=rc=>{
+ const mine=(rc||[]).filter(r=>r.p!=='N').reduce((a,r)=>a+rcNum(r.y),0);
+ const hers=(rc||[]).filter(r=>r.p==='N').reduce((a,r)=>a+rcNum(r.y),0);
+ return {mine,hers,total:mine+hers,count:(rc||[]).length};
+};
+const rcSettle=(mine,hers)=>{
+ const diff=mine-(mine+hers)/2;
+ return Math.abs(diff)<0.5 ? 'Even, nothing to settle'
+   : (diff>0 ? `Nana owes Brian ¥${Math.round(diff).toLocaleString()}`
+             : `Brian owes Nana ¥${Math.round(-diff).toLocaleString()}`);
+};
+const rcCard=(mine,hers)=>`
+  <div class="t-main"><span class="t-yen">¥${Math.round(mine+hers).toLocaleString()}</span>
+   <span class="t-cad">${rcCad(mine+hers)} CAD</span></div>
+  <div class="t-split"><span>Brian ¥${Math.round(mine).toLocaleString()}</span>
+   <span>Nana ¥${Math.round(hers).toLocaleString()}</span></div>
+  <div class="t-settle">${rcSettle(mine,hers)}</div>`;
+function tripCardHTML(){
+ let tm=0,th=0,tc=0;
+ for(const LL of LEGS){const s=rcSum(S.rc[LL.id]);tm+=s.mine;th+=s.hers;tc+=s.count;}
+ return `<div class="t-label">Whole trip${tc?` · ${tc} receipt${tc>1?'s':''}`:''}</div>
+  ${rcCard(tm,th)}
+  <label class="t-rate">¥1 = <input inputmode="decimal" data-rate value="${S.rate}"> CAD</label>`;
+}
+/* Update the whole-trip card on every leg (skips the one being typed into so a
+   rate edit does not yank focus). */
+function refreshTripTallies(){
+ document.querySelectorAll('[data-triptally]').forEach(el=>{
+  if(el.contains(document.activeElement)) return;
+  el.innerHTML=tripCardHTML();
+ });
+}
+
 function panels(){
  const root=document.getElementById('panels');
  if(!MODE){root.innerHTML='';return;}   // nothing until they sign in
@@ -717,14 +776,15 @@ function panels(){
    </div>
 
    <div class="sub" data-subpane="notes">
-    <div class="sec-h"><h3>Notes &amp; comments</h3><span class="meta" data-ncount></span></div>
-    <p class="notes-hint">Favourites, places to revisit, and notes between you and Nana. Only editors can see this.</p>
+    <div class="sec-h"><h3>Notes</h3><span class="meta" data-ncount></span></div>
+    <p class="notes-hint">Favourites, places to revisit, and comments between you and Nana. Only editors can see this.</p>
     <div data-nlist></div>
     <button class="additem" data-addnote>+ Add a note</button>
    </div>
 
    <div class="sub" data-subpane="receipts">
     <div class="sec-h"><h3>Shared food</h3><span class="meta" data-rcount></span></div>
+    <div class="tally trip" data-triptally></div>
     <div class="tally" data-tally></div>
     <div data-rlist></div>
     <button class="additem" data-addrc>+ Add a receipt</button>
@@ -905,23 +965,11 @@ function panels(){
    tally();
   };
   const tally=()=>{
-   const rc=S.rc[L.id]||[];
-   const num=v=>{const n=parseFloat(String(v).replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
-   const mine=rc.filter(r=>r.p!=='N').reduce((a,r)=>a+num(r.y),0);
-   const hers=rc.filter(r=>r.p==='N').reduce((a,r)=>a+num(r.y),0);
-   const total=mine+hers, each=total/2, diff=mine-each;
-   const cad=v=>'$'+(v*S.rate).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
-   const settle = Math.abs(diff)<0.5 ? 'Even, nothing to settle'
-     : (diff>0 ? `Nana owes you ¥${Math.round(diff).toLocaleString()}`
-               : `You owe Nana ¥${Math.round(-diff).toLocaleString()}`);
-   p.querySelector('[data-rcount]').textContent=rc.length?`${rc.length} receipt${rc.length>1?'s':''}`:'';
-   p.querySelector('[data-tally]').innerHTML=`
-    <div class="t-main"><span class="t-yen">¥${Math.round(total).toLocaleString()}</span>
-     <span class="t-cad">${cad(total)} CAD</span></div>
-    <div class="t-split"><span>Brian ¥${Math.round(mine).toLocaleString()}</span>
-     <span>Nana ¥${Math.round(hers).toLocaleString()}</span></div>
-    <div class="t-settle">${settle}</div>
-    <label class="t-rate">¥1 = <input inputmode="decimal" data-rate value="${S.rate}"> CAD</label>`;
+   const leg=rcSum(S.rc[L.id]);
+   p.querySelector('[data-rcount]').textContent=leg.count?`${leg.count} receipt${leg.count>1?'s':''}`:'';
+   p.querySelector('[data-tally]').innerHTML=`<div class="t-label">This leg</div>${rcCard(leg.mine,leg.hers)}`;
+   // the whole-trip card is shared, so refresh it on every leg's panel
+   refreshTripTallies();
   };
   drawRc();
 
@@ -952,25 +1000,43 @@ function panels(){
   });
   }
 
-  // Notes & comments — private to editors, hidden from viewers.
+  // Notes — private to editors, hidden from viewers. Each note is a card with
+  // its own comment thread between Brian and Nana.
   if(!viewer){
   const nl=p.querySelector('[data-nlist]');
+  const openThreads=new Set();   // note indexes whose thread is expanded
   const fmtNote=t=>{try{return t?new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';}catch(_){return '';}};
+  const whoTog=(cls,attr,val,a)=>`<div class="who ${cls}" ${attr}="${val}">
+       <button data-a="B" aria-selected="${a!=='N'}">Brian</button>
+       <button data-a="N" aria-selected="${a==='N'}">Nana</button>
+      </div>`;
   const drawNotes=()=>{
    const nt=S.nt[L.id]||(S.nt[L.id]=[]);
-   nl.innerHTML=nt.length?'':`<div class="empty"><b>No notes yet</b>Jot down favourites, places to revisit, or leave each other a comment.</div>`;
+   nl.innerHTML=nt.length?'':`<div class="empty"><b>No notes yet</b>Jot down favourites or places to revisit, then comment back and forth.</div>`;
    nt.forEach((n,i)=>{
+    if(!Array.isArray(n.c))n.c=[];
+    const open=openThreads.has(i), cn=n.c.length;
     const el=document.createElement('div');el.className='note';
     el.innerHTML=`
      <div class="note-top">
-      <div class="who note-who" data-nwho="${i}">
-       <button data-a="B" aria-selected="${n.a!=='N'}">Brian</button>
-       <button data-a="N" aria-selected="${n.a==='N'}">Nana</button>
-      </div>
+      ${whoTog('note-who','data-nwho',i,n.a)}
       <span class="note-date">${fmtNote(n.t)}</span>
-      <button class="del" data-ndel="${i}" aria-label="Delete">✕</button>
+      <button class="del" data-ndel="${i}" aria-label="Delete note">✕</button>
      </div>
-     <textarea class="note-text" data-nx="${i}" rows="1" placeholder="Write a note or a comment…">${esc(n.x||'')}</textarea>`;
+     <textarea class="note-text" data-nx="${i}" rows="1" placeholder="Write a note…">${esc(n.x||'')}</textarea>
+     <button class="cbtn" data-ctoggle="${i}" aria-expanded="${open}">💬 ${cn?cn+' '+(cn>1?'comments':'comment'):'Comment'}</button>
+     <div class="note-thread" data-thread="${i}"${open?'':' hidden'}>
+      ${n.c.map((cm,ci)=>`
+       <div class="comment">
+        <div class="comment-top">
+         ${whoTog('cm-who','data-cwho',i+':'+ci,cm.a)}
+         <span class="cm-date">${fmtNote(cm.t)}</span>
+         <button class="del" data-cdel="${i}:${ci}" aria-label="Delete comment">✕</button>
+        </div>
+        <textarea class="cm-text" data-cx="${i}:${ci}" rows="1" placeholder="Reply…">${esc(cm.x||'')}</textarea>
+       </div>`).join('')}
+      <button class="additem cm-add" data-addc="${i}">+ Add comment</button>
+     </div>`;
     nl.appendChild(el);
    });
    p.querySelector('[data-ncount]').textContent=nt.length?`${nt.length} note${nt.length>1?'s':''}`:'';
@@ -981,21 +1047,40 @@ function panels(){
   const savNt=()=>{clearTimeout(tNt);tNt=setTimeout(()=>save('nt2:'+L.id,S.nt[L.id]),600);};
   const notesPane=p.querySelector('[data-subpane="notes"]');
   notesPane.addEventListener('input',e=>{
-   const x=e.target.dataset.nx;
-   if(x!==undefined){S.nt[L.id][+x].x=e.target.value;autosize(e.target);savNt();}
+   const nx=e.target.dataset.nx, cx=e.target.dataset.cx;
+   if(nx!==undefined){S.nt[L.id][+nx].x=e.target.value;autosize(e.target);savNt();}
+   else if(cx!==undefined){const[i,ci]=cx.split(':').map(Number);S.nt[L.id][i].c[ci].x=e.target.value;autosize(e.target);savNt();}
   });
   notesPane.addEventListener('click',e=>{
    const btn=e.target.closest('button');if(!btn)return;
    if(btn.dataset.addnote!==undefined){
-    S.nt[L.id].push({a:USER||'B',x:'',t:Date.now()});save('nt2:'+L.id,S.nt[L.id]);drawNotes();
+    S.nt[L.id].push({a:USER||'B',x:'',t:Date.now(),c:[]});save('nt2:'+L.id,S.nt[L.id]);drawNotes();
     const ins=nl.querySelectorAll('.note-text');if(ins.length)ins[ins.length-1].focus();
    }else if(btn.dataset.ndel!==undefined){
-    S.nt[L.id].splice(+btn.dataset.ndel,1);save('nt2:'+L.id,S.nt[L.id]);drawNotes();
+    S.nt[L.id].splice(+btn.dataset.ndel,1);openThreads.clear();save('nt2:'+L.id,S.nt[L.id]);drawNotes();
+   }else if(btn.dataset.ctoggle!==undefined){
+    const i=+btn.dataset.ctoggle, thread=nl.querySelector(`[data-thread="${i}"]`);
+    const willOpen=thread.hidden;thread.hidden=!willOpen;btn.setAttribute('aria-expanded',String(willOpen));
+    if(willOpen)openThreads.add(i);else openThreads.delete(i);
+   }else if(btn.dataset.addc!==undefined){
+    const i=+btn.dataset.addc;(S.nt[L.id][i].c=S.nt[L.id][i].c||[]).push({a:USER||'B',x:'',t:Date.now()});
+    openThreads.add(i);save('nt2:'+L.id,S.nt[L.id]);drawNotes();
+    const thread=nl.querySelector(`[data-thread="${i}"]`);
+    if(thread){const boxes=thread.querySelectorAll('.cm-text');if(boxes.length)boxes[boxes.length-1].focus();}
+   }else if(btn.dataset.cdel!==undefined){
+    const[i,ci]=btn.dataset.cdel.split(':').map(Number);
+    S.nt[L.id][i].c.splice(ci,1);save('nt2:'+L.id,S.nt[L.id]);drawNotes();
    }else if(btn.dataset.a){
-    const i=+btn.parentElement.dataset.nwho;
-    S.nt[L.id][i].a=btn.dataset.a;
-    btn.parentElement.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
-    save('nt2:'+L.id,S.nt[L.id]);
+    const wrap=btn.parentElement;
+    if(wrap.dataset.nwho!==undefined){
+     const i=+wrap.dataset.nwho;S.nt[L.id][i].a=btn.dataset.a;
+     wrap.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
+     save('nt2:'+L.id,S.nt[L.id]);
+    }else if(wrap.dataset.cwho!==undefined){
+     const[i,ci]=wrap.dataset.cwho.split(':').map(Number);S.nt[L.id][i].c[ci].a=btn.dataset.a;
+     wrap.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
+     save('nt2:'+L.id,S.nt[L.id]);
+    }
    }
   });
   }

@@ -115,6 +115,14 @@ Nana), and you can flip it with the toggle, so it works as a back-and-forth.
 Like receipts, the Notes tab is **editor-only** — it never appears for viewers
 and its text is never rendered into a viewer's page.
 
+## Receipts
+
+Add shared receipts on each leg's **Receipts** tab and tag who paid (Brian or
+Nana). Each tab shows two totals: **This leg** and a **Whole trip** card that
+sums every leg, so the overall "who owes whom" is always visible without adding
+the legs up by hand. The whole-trip card updates on every leg the moment a
+receipt changes anywhere.
+
 ## Moving a photo to another leg
 
 If a photo lands in the wrong leg (or you assigned it by hand and changed your
