@@ -216,8 +216,11 @@ input[type=file]{display:none;}
 
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px;}
 @media(min-width:520px){.grid{grid-template-columns:repeat(4,1fr);}}
-.th{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--card);cursor:pointer;}
-.th img{width:100%;height:100%;object-fit:cover;display:block;}
+.th{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--card);cursor:pointer;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;}
+.th img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;}
+.th.holding::after{content:'';position:absolute;inset:0;background:rgba(232,96,143,.35);
+  border:2px solid var(--ume);border-radius:9px;pointer-events:none;}
 .th .vt{position:absolute;bottom:4px;left:4px;background:rgba(13,18,32,.85);
   font-family:'JetBrains Mono',monospace;font-size:8px;padding:1px 5px;border-radius:4px;}
 .th .x{position:absolute;top:3px;right:3px;width:24px;height:24px;border-radius:50%;
@@ -781,6 +784,42 @@ function panels(){
 }
 function autosize(el){if(!el||el.tagName!=='TEXTAREA')return;el.style.height='auto';el.style.height=el.scrollHeight+'px';}
 
+function photoPaths(rec){
+ const paths=[`thumbs/${rec.id}.jpg`];
+ if(rec.o){
+  const fn=rec.o.split('/').pop()?.split('?')[0];
+  if(fn) paths.push(`originals/${fn}`);
+ }
+ return paths;
+}
+
+async function removePhoto(legId,rec,panelEl){
+ if(!confirm('Delete this photo?')) return;
+ S.ph[legId]=S.ph[legId].filter(x=>x.id!==rec.id);
+ await save('ph2:'+legId,S.ph[legId]);
+ if(sb) sb.storage.from(BUCKET).remove(photoPaths(rec)).catch(e=>console.error('storage delete',e));
+ gallery(panelEl,legId);
+ chips();
+}
+
+function bindLongPress(el,onPress){
+ let timer,sx,sy;
+ const MOVE=12,MS=500;
+ const clear=()=>{clearTimeout(timer);timer=null;el.classList.remove('holding');};
+ el.addEventListener('pointerdown',e=>{
+  if(e.button>0) return;
+  sx=e.clientX; sy=e.clientY;
+  el.classList.add('holding');
+  timer=setTimeout(()=>{clear();el._skipClick=true;onPress();},MS);
+ });
+ el.addEventListener('pointermove',e=>{
+  if(!timer) return;
+  if(Math.hypot(e.clientX-sx,e.clientY-sy)>MOVE) clear();
+ });
+ ['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev,clear));
+ el.addEventListener('contextmenu',e=>e.preventDefault());
+}
+
 function gallery(p,id){
  const g=p.querySelector('[data-gal]'),list=S.ph[id]||[];
  p.querySelector('[data-pc]').textContent=list.length?`${list.length} saved`:'';
@@ -791,9 +830,10 @@ function gallery(p,id){
   const t=document.createElement('div');t.className='th';
   t.innerHTML=`<img src="${o.t||o.u}" alt="" loading="lazy">${o.v?'<span class="vt">VID</span>':''}
    <button class="x" aria-label="Remove">✕</button>`;
-  t.querySelector('.x').onclick=e=>{e.stopPropagation();
-   S.ph[id]=S.ph[id].filter(x=>x.id!==o.id);save('ph2:'+id,S.ph[id]);gallery(p,id);chips();};
+  t.querySelector('.x').onclick=e=>{e.stopPropagation();removePhoto(id,o,p);};
+  bindLongPress(t,()=>removePhoto(id,o,p));
   t.onclick=()=>{
+   if(t._skipClick){t._skipClick=false;return;}
    document.getElementById('lbImg').src=o.o||o.t||o.u;
    document.getElementById('lbCap').textContent=`${o.n}${o.d?' · '+o.d:''}${o.v?' · video preview only':''}`;
    document.getElementById('lb').classList.add('on');};
