@@ -110,10 +110,11 @@ share the edit passwords with viewers.
 ## Notes and comments
 
 Each leg has a **Notes** tab for favourites, places to revisit, and comments
-between you and Nana. A new note is tagged with whoever's signed in (Brian or
-Nana), and you can flip it with the toggle, so it works as a back-and-forth.
-Like receipts, the Notes tab is **editor-only** — it never appears for viewers
-and its text is never rendered into a viewer's page.
+between you and Nana. Every note and comment is tagged with whoever's signed in
+(a green **B** for Brian, pink **N** for Nana — the same badge as photos) and
+can't be reassigned, so the thread reads as a real back-and-forth. Like
+receipts, the Notes tab is **editor-only** — it never appears for viewers and
+its text is never rendered into a viewer's page.
 
 ## Receipts
 

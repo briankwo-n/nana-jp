@@ -230,15 +230,24 @@ a{color:var(--matcha);}
   display:flex;flex-direction:column;gap:8px;}
 .note-thread[hidden]{display:none;}
 .comment{background:var(--card-2);border-radius:10px;padding:9px 11px;}
-.comment-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.comment .cm-who{flex:0 0 auto;background:var(--night-2);}
-.comment .cm-who button{padding:5px 11px;min-height:28px;font-size:11px;}
+.comment-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.idtag{width:18px;height:18px;border-radius:50%;font-family:'JetBrains Mono',monospace;
+  font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;
+  line-height:1;flex:0 0 auto;}
+.idtag.b{background:var(--matcha);color:#0c231d;}
+.idtag.n{background:var(--ume);color:#1a0a12;}
+.cm-name{font-size:12.5px;font-weight:700;color:var(--frost);}
 .cm-date{flex:1;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--mute);text-align:right;}
 .cm-text{width:100%;background:transparent;border:none;color:var(--frost);font-size:15px;
   line-height:1.45;resize:none;overflow:hidden;padding:0;}
 .cm-text:focus{outline:none;}
 .cm-text::placeholder{color:#54608097;}
 .cm-add{margin-top:2px;font-size:11.5px;min-height:34px;}
+.savebtn{display:none;margin-top:9px;background:var(--matcha);color:#0c231d;border:none;
+  border-radius:99px;font-weight:700;font-size:12.5px;padding:7px 16px;min-height:34px;cursor:pointer;
+  align-items:center;gap:5px;}
+.savebtn:active{transform:scale(.97);}
+.note.dirty>.savebtn,.comment.dirty>.savebtn{display:inline-flex;}
 
 .dropzone{border:1.5px dashed var(--line);border-radius:14px;padding:20px 16px;text-align:center;
   background:#171F31;margin-bottom:12px;transition:all .16s ease;}
@@ -686,6 +695,10 @@ function chips(){
  c.scrollLeft=keep;
 }
 
+/* Which note comment-threads are expanded, kept per leg so a live sync or any
+   re-render doesn't collapse a thread you're reading. */
+const openNoteThreads={};
+
 /* Receipt maths, shared so the whole-trip total can be recomputed and shown
    on every leg's Receipts tab. */
 const rcNum=v=>{const n=parseFloat(String(v).replace(/[^\d.]/g,''));return isNaN(n)?0:n;};
@@ -1004,12 +1017,10 @@ function panels(){
   // its own comment thread between Brian and Nana.
   if(!viewer){
   const nl=p.querySelector('[data-nlist]');
-  const openThreads=new Set();   // note indexes whose thread is expanded
+  const openThreads=openNoteThreads[L.id]||(openNoteThreads[L.id]=new Set());
   const fmtNote=t=>{try{return t?new Date(t).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';}catch(_){return '';}};
-  const whoTog=(cls,attr,val,a)=>`<div class="who ${cls}" ${attr}="${val}">
-       <button data-a="B" aria-selected="${a!=='N'}">Brian</button>
-       <button data-a="N" aria-selected="${a==='N'}">Nana</button>
-      </div>`;
+  const badge=a=>`<span class="idtag ${a==='N'?'n':'b'}">${a==='N'?'N':'B'}</span>`;
+  const sizeVisible=()=>requestAnimationFrame(()=>nl.querySelectorAll('.note-text, .note-thread:not([hidden]) .cm-text').forEach(autosize));
   const drawNotes=()=>{
    const nt=S.nt[L.id]||(S.nt[L.id]=[]);
    nl.innerHTML=nt.length?'':`<div class="empty"><b>No notes yet</b>Jot down favourites or places to revisit, then comment back and forth.</div>`;
@@ -1019,41 +1030,55 @@ function panels(){
     const el=document.createElement('div');el.className='note';
     el.innerHTML=`
      <div class="note-top">
-      ${whoTog('note-who','data-nwho',i,n.a)}
+      ${badge(n.a)}<span class="cm-name">${n.a==='N'?'Nana':'Brian'}</span>
       <span class="note-date">${fmtNote(n.t)}</span>
       <button class="del" data-ndel="${i}" aria-label="Delete note">✕</button>
      </div>
      <textarea class="note-text" data-nx="${i}" rows="1" placeholder="Write a note…">${esc(n.x||'')}</textarea>
+     <button class="savebtn" data-save aria-label="Save note">✓ Save</button>
      <button class="cbtn" data-ctoggle="${i}" aria-expanded="${open}">💬 ${cn?cn+' '+(cn>1?'comments':'comment'):'Comment'}</button>
      <div class="note-thread" data-thread="${i}"${open?'':' hidden'}>
       ${n.c.map((cm,ci)=>`
        <div class="comment">
         <div class="comment-top">
-         ${whoTog('cm-who','data-cwho',i+':'+ci,cm.a)}
+         ${badge(cm.a)}<span class="cm-name">${cm.a==='N'?'Nana':'Brian'}</span>
          <span class="cm-date">${fmtNote(cm.t)}</span>
          <button class="del" data-cdel="${i}:${ci}" aria-label="Delete comment">✕</button>
         </div>
         <textarea class="cm-text" data-cx="${i}:${ci}" rows="1" placeholder="Reply…">${esc(cm.x||'')}</textarea>
+        <button class="savebtn" data-save aria-label="Save comment">✓ Save</button>
        </div>`).join('')}
       <button class="additem cm-add" data-addc="${i}">+ Add comment</button>
      </div>`;
     nl.appendChild(el);
    });
    p.querySelector('[data-ncount]').textContent=nt.length?`${nt.length} note${nt.length>1?'s':''}`:'';
-   requestAnimationFrame(()=>nl.querySelectorAll('textarea').forEach(autosize));
+   sizeVisible();
   };
   drawNotes();
-  let tNt;
-  const savNt=()=>{clearTimeout(tNt);tNt=setTimeout(()=>save('nt2:'+L.id,S.nt[L.id]),600);};
   const notesPane=p.querySelector('[data-subpane="notes"]');
+  const saveNotes=()=>{save('nt2:'+L.id,S.nt[L.id]);nl.querySelectorAll('.dirty').forEach(x=>x.classList.remove('dirty'));};
+  // Typing only updates local state and flags the card as unsaved — nothing
+  // syncs until Save is tapped, so it never stutters while live updating.
   notesPane.addEventListener('input',e=>{
    const nx=e.target.dataset.nx, cx=e.target.dataset.cx;
-   if(nx!==undefined){S.nt[L.id][+nx].x=e.target.value;autosize(e.target);savNt();}
-   else if(cx!==undefined){const[i,ci]=cx.split(':').map(Number);S.nt[L.id][i].c[ci].x=e.target.value;autosize(e.target);savNt();}
+   if(nx!==undefined){S.nt[L.id][+nx].x=e.target.value;autosize(e.target);e.target.closest('.note').classList.add('dirty');}
+   else if(cx!==undefined){const[i,ci]=cx.split(':').map(Number);S.nt[L.id][i].c[ci].x=e.target.value;autosize(e.target);e.target.closest('.comment').classList.add('dirty');}
+  });
+  // Keep the Save button from stealing focus (so it doesn't vanish before the tap lands).
+  notesPane.addEventListener('pointerdown',e=>{if(e.target.closest('[data-save]'))e.preventDefault();});
+  // Safety net: if focus leaves an edited note/comment without a tap on Save, still save it.
+  notesPane.addEventListener('focusout',e=>{
+   if(e.target.dataset&&(e.target.dataset.nx!==undefined||e.target.dataset.cx!==undefined)){
+    const item=e.target.closest('.note,.comment');
+    if(item&&item.classList.contains('dirty'))saveNotes();
+   }
   });
   notesPane.addEventListener('click',e=>{
    const btn=e.target.closest('button');if(!btn)return;
-   if(btn.dataset.addnote!==undefined){
+   if(btn.dataset.save!==undefined){
+    saveNotes();
+   }else if(btn.dataset.addnote!==undefined){
     S.nt[L.id].push({a:USER||'B',x:'',t:Date.now(),c:[]});save('nt2:'+L.id,S.nt[L.id]);drawNotes();
     const ins=nl.querySelectorAll('.note-text');if(ins.length)ins[ins.length-1].focus();
    }else if(btn.dataset.ndel!==undefined){
@@ -1061,7 +1086,7 @@ function panels(){
    }else if(btn.dataset.ctoggle!==undefined){
     const i=+btn.dataset.ctoggle, thread=nl.querySelector(`[data-thread="${i}"]`);
     const willOpen=thread.hidden;thread.hidden=!willOpen;btn.setAttribute('aria-expanded',String(willOpen));
-    if(willOpen)openThreads.add(i);else openThreads.delete(i);
+    if(willOpen){openThreads.add(i);sizeVisible();}else openThreads.delete(i);
    }else if(btn.dataset.addc!==undefined){
     const i=+btn.dataset.addc;(S.nt[L.id][i].c=S.nt[L.id][i].c||[]).push({a:USER||'B',x:'',t:Date.now()});
     openThreads.add(i);save('nt2:'+L.id,S.nt[L.id]);drawNotes();
@@ -1070,17 +1095,6 @@ function panels(){
    }else if(btn.dataset.cdel!==undefined){
     const[i,ci]=btn.dataset.cdel.split(':').map(Number);
     S.nt[L.id][i].c.splice(ci,1);save('nt2:'+L.id,S.nt[L.id]);drawNotes();
-   }else if(btn.dataset.a){
-    const wrap=btn.parentElement;
-    if(wrap.dataset.nwho!==undefined){
-     const i=+wrap.dataset.nwho;S.nt[L.id][i].a=btn.dataset.a;
-     wrap.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
-     save('nt2:'+L.id,S.nt[L.id]);
-    }else if(wrap.dataset.cwho!==undefined){
-     const[i,ci]=wrap.dataset.cwho.split(':').map(Number);S.nt[L.id][i].c[ci].a=btn.dataset.a;
-     wrap.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b===btn));
-     save('nt2:'+L.id,S.nt[L.id]);
-    }
    }
   });
   }
